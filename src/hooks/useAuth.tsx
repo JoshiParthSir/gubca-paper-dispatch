@@ -33,12 +33,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   useEffect(() => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Fetch user profile
+          // Fetch user profile with setTimeout to avoid blocking
           setTimeout(async () => {
             try {
               const { data: profileData } = await supabase
@@ -63,7 +63,23 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-      if (!session) {
+      
+      if (session?.user) {
+        // Fetch profile for existing session
+        setTimeout(async () => {
+          try {
+            const { data: profileData } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('user_id', session.user.id)
+              .single();
+            setProfile(profileData);
+          } catch (error) {
+            console.error('Error fetching profile:', error);
+          }
+          setLoading(false);
+        }, 0);
+      } else {
         setLoading(false);
       }
     });
