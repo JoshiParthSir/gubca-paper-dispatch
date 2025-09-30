@@ -3,6 +3,7 @@ import { Navigate } from 'react-router-dom';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/layout/AppSidebar';
 import { DashboardHeader } from '@/components/layout/DashboardHeader';
+import { Footer } from '@/components/layout/Footer';
 import { Loader2 } from 'lucide-react';
 
 interface DashboardLayoutProps {
@@ -33,6 +34,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           <main className="flex-1 p-6">
             {children}
           </main>
+          <Footer />
         </div>
       </div>
     </SidebarProvider>
