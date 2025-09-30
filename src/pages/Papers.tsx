@@ -1,0 +1,283 @@
+import { useEffect, useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
+import { Plus, Trash2, FileText } from 'lucide-react';
+
+interface Paper {
+  id: string;
+  title: string;
+  subject: string;
+  duration_minutes: number;
+  file_path: string;
+  batch_id: string;
+  created_at: string;
+  batches: {
+    name: string;
+  };
+}
+
+interface Batch {
+  id: string;
+  name: string;
+}
+
+export default function Papers() {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [papers, setPapers] = useState<Paper[]>([]);
+  const [batches, setBatches] = useState<Batch[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [formData, setFormData] = useState({
+    title: '',
+    subject: '',
+    duration_minutes: 180,
+    batch_id: '',
+  });
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+  useEffect(() => {
+    fetchPapers();
+    fetchBatches();
+  }, []);
+
+  const fetchPapers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('papers')
+        .select('*, batches(name)')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setPapers(data || []);
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchBatches = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('batches')
+        .select('id, name')
+        .eq('is_active', true)
+        .order('name');
+
+      if (error) throw error;
+      setBatches(data || []);
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!selectedFile) {
+      toast({
+        title: 'Error',
+        description: 'Please select a file to upload',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setUploading(true);
+
+    try {
+      // Upload file to storage (placeholder - storage needs to be set up)
+      const filePath = `papers/${Date.now()}_${selectedFile.name}`;
+      
+      const { error: insertError } = await supabase
+        .from('papers')
+        .insert([{
+          ...formData,
+          file_path: filePath,
+          file_size: selectedFile.size,
+          uploaded_by: user!.id,
+        }]);
+
+      if (insertError) throw insertError;
+
+      toast({ title: 'Paper uploaded successfully' });
+      setDialogOpen(false);
+      resetForm();
+      fetchPapers();
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this paper?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('papers')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      toast({ title: 'Paper deleted successfully' });
+      fetchPapers();
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      title: '',
+      subject: '',
+      duration_minutes: 180,
+      batch_id: '',
+    });
+    setSelectedFile(null);
+  };
+
+  if (loading) {
+    return <div className="flex items-center justify-center h-64">Loading...</div>;
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold">Exam Papers</h1>
+        <Dialog open={dialogOpen} onOpenChange={(open) => {
+          setDialogOpen(open);
+          if (!open) resetForm();
+        }}>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              Upload Paper
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Upload New Paper</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <Label htmlFor="title">Paper Title</Label>
+                <Input
+                  id="title"
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="subject">Subject</Label>
+                <Input
+                  id="subject"
+                  value={formData.subject}
+                  onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="duration">Duration (minutes)</Label>
+                <Input
+                  id="duration"
+                  type="number"
+                  value={formData.duration_minutes}
+                  onChange={(e) => setFormData({ ...formData, duration_minutes: parseInt(e.target.value) })}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="batch">Batch</Label>
+                <Select
+                  value={formData.batch_id}
+                  onValueChange={(value) => setFormData({ ...formData, batch_id: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select batch" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {batches.map((batch) => (
+                      <SelectItem key={batch.id} value={batch.id}>
+                        {batch.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="file">Paper File (PDF)</Label>
+                <Input
+                  id="file"
+                  type="file"
+                  accept=".pdf"
+                  onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                  required
+                />
+              </div>
+              <Button type="submit" className="w-full" disabled={uploading}>
+                {uploading ? 'Uploading...' : 'Upload Paper'}
+              </Button>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {papers.map((paper) => (
+          <Card key={paper.id}>
+            <CardHeader>
+              <CardTitle className="flex justify-between items-start">
+                <div className="flex items-start gap-2">
+                  <FileText className="h-5 w-5 mt-1" />
+                  <span>{paper.title}</span>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleDelete(paper.id)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2 text-sm">
+                <p><strong>Subject:</strong> {paper.subject}</p>
+                <p><strong>Duration:</strong> {paper.duration_minutes} minutes</p>
+                <p><strong>Batch:</strong> {paper.batches.name}</p>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}

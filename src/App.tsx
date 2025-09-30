@@ -8,6 +8,11 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import LoginPage from "./components/auth/LoginPage";
 import Dashboard from "./pages/Dashboard";
+import Colleges from "./pages/Colleges";
+import Batches from "./pages/Batches";
+import Papers from "./pages/Papers";
+import Allocations from "./pages/Allocations";
+import MyPapers from "./pages/MyPapers";
 import { DashboardLayout } from "./components/layout/DashboardLayout";
 
 const queryClient = new QueryClient();
@@ -25,6 +30,31 @@ const App = () => (
             <Route path="/dashboard" element={
               <DashboardLayout>
                 <Dashboard />
+              </DashboardLayout>
+            } />
+            <Route path="/colleges" element={
+              <DashboardLayout>
+                <Colleges />
+              </DashboardLayout>
+            } />
+            <Route path="/batches" element={
+              <DashboardLayout>
+                <Batches />
+              </DashboardLayout>
+            } />
+            <Route path="/papers" element={
+              <DashboardLayout>
+                <Papers />
+              </DashboardLayout>
+            } />
+            <Route path="/allocations" element={
+              <DashboardLayout>
+                <Allocations />
+              </DashboardLayout>
+            } />
+            <Route path="/my-papers" element={
+              <DashboardLayout>
+                <MyPapers />
               </DashboardLayout>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
