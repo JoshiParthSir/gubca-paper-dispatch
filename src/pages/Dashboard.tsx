@@ -78,21 +78,21 @@ export default function Dashboard() {
             <CardContent>
               <div className="space-y-4">
                 <div className="flex items-center space-x-4">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <div className="w-2 h-2 bg-success rounded-full"></div>
                   <div className="flex-1 space-y-1">
                     <p className="text-sm font-medium">Mathematics Paper uploaded</p>
                     <p className="text-sm text-muted-foreground">Batch 2024-A • 2 hours ago</p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-4">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <div className="w-2 h-2 bg-info rounded-full"></div>
                   <div className="flex-1 space-y-1">
                     <p className="text-sm font-medium">New college registered</p>
                     <p className="text-sm text-muted-foreground">St. Xavier's College • 4 hours ago</p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-4">
-                  <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                  <div className="w-2 h-2 bg-warning rounded-full"></div>
                   <div className="flex-1 space-y-1">
                     <p className="text-sm font-medium">Papers allocated to 15 colleges</p>
                     <p className="text-sm text-muted-foreground">Physics Exam • 6 hours ago</p>
@@ -114,21 +114,21 @@ export default function Dashboard() {
                     <p className="text-sm font-medium">Mathematics - Final</p>
                     <p className="text-sm text-muted-foreground">Tomorrow, 10:00 AM</p>
                   </div>
-                  <div className="text-sm text-green-600 font-medium">Ready</div>
+                  <div className="text-sm text-success font-medium">Ready</div>
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium">Physics - Midterm</p>
                     <p className="text-sm text-muted-foreground">Dec 30, 2:00 PM</p>
                   </div>
-                  <div className="text-sm text-orange-600 font-medium">Pending</div>
+                  <div className="text-sm text-warning font-medium">Pending</div>
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium">Chemistry - Lab</p>
                     <p className="text-sm text-muted-foreground">Jan 2, 9:00 AM</p>
                   </div>
-                  <div className="text-sm text-green-600 font-medium">Ready</div>
+                  <div className="text-sm text-success font-medium">Ready</div>
                 </div>
               </div>
             </CardContent>
@@ -203,7 +203,7 @@ export default function Dashboard() {
                   <p className="text-sm text-muted-foreground">Batch 2024-A</p>
                 </div>
                 <div className="text-right">
-                  <div className="text-sm text-green-600 font-medium">Available</div>
+                  <div className="text-sm text-success font-medium">Available</div>
                   <div className="text-xs text-muted-foreground">Download opens in 30 min</div>
                 </div>
               </div>
@@ -214,7 +214,7 @@ export default function Dashboard() {
                   <p className="text-sm text-muted-foreground">Batch 2024-B</p>
                 </div>
                 <div className="text-right">
-                  <div className="text-sm text-gray-500 font-medium">Pending</div>
+                  <div className="text-sm text-muted-foreground font-medium">Pending</div>
                   <div className="text-xs text-muted-foreground">Not yet available</div>
                 </div>
               </div>
@@ -230,21 +230,21 @@ export default function Dashboard() {
           <CardContent>
             <div className="space-y-4">
               <div className="flex items-center space-x-4">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <div className="w-2 h-2 bg-success rounded-full"></div>
                 <div className="flex-1 space-y-1">
                   <p className="text-sm font-medium">Chemistry Final Paper</p>
                   <p className="text-sm text-muted-foreground">Downloaded 2 days ago</p>
                 </div>
               </div>
               <div className="flex items-center space-x-4">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <div className="w-2 h-2 bg-success rounded-full"></div>
                 <div className="flex-1 space-y-1">
                   <p className="text-sm font-medium">English Literature Exam</p>
                   <p className="text-sm text-muted-foreground">Downloaded 1 week ago</p>
                 </div>
               </div>
               <div className="flex items-center space-x-4">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <div className="w-2 h-2 bg-success rounded-full"></div>
                 <div className="flex-1 space-y-1">
                   <p className="text-sm font-medium">Biology Practical</p>
                   <p className="text-sm text-muted-foreground">Downloaded 2 weeks ago</p>
