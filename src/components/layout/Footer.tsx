@@ -3,7 +3,7 @@ export function Footer() {
     <footer className="border-t bg-background">
       <div className="container mx-auto px-4 py-4">
         <p className="text-center text-sm text-muted-foreground">
-          © Designed and Development by Parth Joshi using{' '}
+          Designed and Developed by: <span className="font-semibold text-foreground">Parth D. Joshi</span> using{' '}
           <a
             href="https://lovable.dev"
             target="_blank"
