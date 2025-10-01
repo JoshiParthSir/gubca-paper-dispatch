@@ -13,6 +13,8 @@ import Batches from "./pages/Batches";
 import Papers from "./pages/Papers";
 import Allocations from "./pages/Allocations";
 import MyPapers from "./pages/MyPapers";
+import DownloadLogs from "./pages/DownloadLogs";
+import Settings from "./pages/Settings";
 import { DashboardLayout } from "./components/layout/DashboardLayout";
 
 const queryClient = new QueryClient();
@@ -32,29 +34,44 @@ const App = () => (
                 <Dashboard />
               </DashboardLayout>
             } />
-            <Route path="/colleges" element={
+            <Route path="/dashboard/colleges" element={
               <DashboardLayout>
                 <Colleges />
               </DashboardLayout>
             } />
-            <Route path="/batches" element={
+            <Route path="/dashboard/batches" element={
               <DashboardLayout>
                 <Batches />
               </DashboardLayout>
             } />
-            <Route path="/papers" element={
+            <Route path="/dashboard/papers" element={
               <DashboardLayout>
                 <Papers />
               </DashboardLayout>
             } />
-            <Route path="/allocations" element={
+            <Route path="/dashboard/allocations" element={
               <DashboardLayout>
                 <Allocations />
               </DashboardLayout>
             } />
-            <Route path="/my-papers" element={
+            <Route path="/dashboard/scheduled" element={
               <DashboardLayout>
                 <MyPapers />
+              </DashboardLayout>
+            } />
+            <Route path="/dashboard/downloads" element={
+              <DashboardLayout>
+                <MyPapers />
+              </DashboardLayout>
+            } />
+            <Route path="/dashboard/logs" element={
+              <DashboardLayout>
+                <DownloadLogs />
+              </DashboardLayout>
+            } />
+            <Route path="/dashboard/settings" element={
+              <DashboardLayout>
+                <Settings />
               </DashboardLayout>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
