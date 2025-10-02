@@ -1,9 +1,179 @@
+import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Building2, Users, FileText, Calendar, Download, Clock } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+
+interface DashboardStats {
+  colleges: number;
+  batches: number;
+  papers: number;
+  allocations: number;
+  scheduledToday: number;
+  upcomingWeek: number;
+}
+
+interface RecentActivity {
+  type: 'paper' | 'college' | 'allocation';
+  title: string;
+  subtitle: string;
+  time: string;
+}
+
+interface UpcomingExam {
+  id: string;
+  paper_title: string;
+  exam_date: string;
+  start_time: string;
+  is_published: boolean;
+}
 
 export default function Dashboard() {
   const { profile } = useAuth();
+  const { toast } = useToast();
+  const [stats, setStats] = useState<DashboardStats>({
+    colleges: 0,
+    batches: 0,
+    papers: 0,
+    allocations: 0,
+    scheduledToday: 0,
+    upcomingWeek: 0,
+  });
+  const [upcomingExams, setUpcomingExams] = useState<UpcomingExam[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (profile) {
+      fetchDashboardData();
+    }
+  }, [profile]);
+
+  const fetchDashboardData = async () => {
+    try {
+      if (profile?.role === 'chairperson') {
+        // Fetch chairperson stats
+        const [collegesRes, batchesRes, papersRes, allocationsRes] = await Promise.all([
+          supabase.from('colleges').select('id', { count: 'exact', head: true }),
+          supabase.from('batches').select('id', { count: 'exact', head: true }),
+          supabase.from('papers').select('id', { count: 'exact', head: true }),
+          supabase.from('allocations').select('id', { count: 'exact', head: true }),
+        ]);
+
+        // Fetch upcoming exams
+        const today = new Date().toISOString().split('T')[0];
+        const weekLater = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        
+        const { data: upcomingData } = await supabase
+          .from('allocations')
+          .select('id, exam_date, start_time, is_published, papers(title)')
+          .gte('exam_date', today)
+          .lte('exam_date', weekLater)
+          .order('exam_date', { ascending: true })
+          .limit(5);
+
+        setStats({
+          colleges: collegesRes.count || 0,
+          batches: batchesRes.count || 0,
+          papers: papersRes.count || 0,
+          allocations: allocationsRes.count || 0,
+          scheduledToday: 0,
+          upcomingWeek: 0,
+        });
+
+        setUpcomingExams(upcomingData?.map(item => ({
+          id: item.id,
+          paper_title: item.papers?.title || 'Unknown',
+          exam_date: item.exam_date,
+          start_time: item.start_time,
+          is_published: item.is_published,
+        })) || []);
+
+      } else {
+        // Fetch college admin stats
+        const { data: allocationColleges } = await supabase
+          .from('allocation_colleges')
+          .select('allocation_id')
+          .eq('college_id', profile!.college_id);
+
+        if (allocationColleges && allocationColleges.length > 0) {
+          const allocationIds = allocationColleges.map(ac => ac.allocation_id);
+          
+          const today = new Date().toISOString().split('T')[0];
+          const weekLater = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+          const { data: todayExams, count: todayCount } = await supabase
+            .from('allocations')
+            .select('id', { count: 'exact' })
+            .in('id', allocationIds)
+            .eq('exam_date', today)
+            .eq('is_published', true);
+
+          const { data: weekExams, count: weekCount } = await supabase
+            .from('allocations')
+            .select('id', { count: 'exact' })
+            .in('id', allocationIds)
+            .gte('exam_date', today)
+            .lte('exam_date', weekLater)
+            .eq('is_published', true);
+
+          const { data: upcomingData } = await supabase
+            .from('allocations')
+            .select('id, exam_date, start_time, is_published, papers(title)')
+            .in('id', allocationIds)
+            .gte('exam_date', today)
+            .lte('exam_date', weekLater)
+            .eq('is_published', true)
+            .order('exam_date', { ascending: true })
+            .limit(5);
+
+          setStats({
+            colleges: 0,
+            batches: 0,
+            papers: 0,
+            allocations: 0,
+            scheduledToday: todayCount || 0,
+            upcomingWeek: weekCount || 0,
+          });
+
+          setUpcomingExams(upcomingData?.map(item => ({
+            id: item.id,
+            paper_title: item.papers?.title || 'Unknown',
+            exam_date: item.exam_date,
+            start_time: item.start_time,
+            is_published: item.is_published,
+          })) || []);
+        }
+      }
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    if (date.toDateString() === today.toDateString()) {
+      return 'Today';
+    } else if (date.toDateString() === tomorrow.toDateString()) {
+      return 'Tomorrow';
+    } else {
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+  };
+
+  if (loading) {
+    return <div className="flex items-center justify-center h-64">Loading dashboard...</div>;
+  }
 
   if (profile?.role === 'chairperson') {
     return (
@@ -22,9 +192,9 @@ export default function Dashboard() {
               <Building2 className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">24</div>
+              <div className="text-2xl font-bold">{stats.colleges}</div>
               <p className="text-xs text-muted-foreground">
-                +2 from last month
+                Registered colleges
               </p>
             </CardContent>
           </Card>
@@ -35,9 +205,9 @@ export default function Dashboard() {
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">12</div>
+              <div className="text-2xl font-bold">{stats.batches}</div>
               <p className="text-xs text-muted-foreground">
-                +1 new batch this week
+                Current academic batches
               </p>
             </CardContent>
           </Card>
@@ -48,92 +218,54 @@ export default function Dashboard() {
               <FileText className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">156</div>
+              <div className="text-2xl font-bold">{stats.papers}</div>
               <p className="text-xs text-muted-foreground">
-                +12 uploaded today
+                Total papers in system
               </p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Allocations</CardTitle>
+              <CardTitle className="text-sm font-medium">Total Allocations</CardTitle>
               <Calendar className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">89</div>
+              <div className="text-2xl font-bold">{stats.allocations}</div>
               <p className="text-xs text-muted-foreground">
-                32 scheduled for today
+                Paper allocations made
               </p>
             </CardContent>
           </Card>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Activities</CardTitle>
-              <CardDescription>Latest actions in the system</CardDescription>
-            </CardHeader>
-            <CardContent>
+        <Card>
+          <CardHeader>
+            <CardTitle>Upcoming Exams</CardTitle>
+            <CardDescription>Scheduled for the next 7 days</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {upcomingExams.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No upcoming exams scheduled</p>
+            ) : (
               <div className="space-y-4">
-                <div className="flex items-center space-x-4">
-                  <div className="w-2 h-2 bg-success rounded-full"></div>
-                  <div className="flex-1 space-y-1">
-                    <p className="text-sm font-medium">Mathematics Paper uploaded</p>
-                    <p className="text-sm text-muted-foreground">Batch 2024-A • 2 hours ago</p>
+                {upcomingExams.map((exam) => (
+                  <div key={exam.id} className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium">{exam.paper_title}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {formatDate(exam.exam_date)}, {exam.start_time}
+                      </p>
+                    </div>
+                    <div className={`text-sm font-medium ${exam.is_published ? 'text-success' : 'text-warning'}`}>
+                      {exam.is_published ? 'Published' : 'Draft'}
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center space-x-4">
-                  <div className="w-2 h-2 bg-info rounded-full"></div>
-                  <div className="flex-1 space-y-1">
-                    <p className="text-sm font-medium">New college registered</p>
-                    <p className="text-sm text-muted-foreground">St. Xavier's College • 4 hours ago</p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-4">
-                  <div className="w-2 h-2 bg-warning rounded-full"></div>
-                  <div className="flex-1 space-y-1">
-                    <p className="text-sm font-medium">Papers allocated to 15 colleges</p>
-                    <p className="text-sm text-muted-foreground">Physics Exam • 6 hours ago</p>
-                  </div>
-                </div>
+                ))}
               </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Upcoming Exams</CardTitle>
-              <CardDescription>Scheduled for the next 7 days</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium">Mathematics - Final</p>
-                    <p className="text-sm text-muted-foreground">Tomorrow, 10:00 AM</p>
-                  </div>
-                  <div className="text-sm text-success font-medium">Ready</div>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium">Physics - Midterm</p>
-                    <p className="text-sm text-muted-foreground">Dec 30, 2:00 PM</p>
-                  </div>
-                  <div className="text-sm text-warning font-medium">Pending</div>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium">Chemistry - Lab</p>
-                    <p className="text-sm text-muted-foreground">Jan 2, 9:00 AM</p>
-                  </div>
-                  <div className="text-sm text-success font-medium">Ready</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -154,22 +286,28 @@ export default function Dashboard() {
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">3</div>
+            <div className="text-2xl font-bold">{stats.scheduledToday}</div>
             <p className="text-xs text-muted-foreground">
-              Next exam at 10:00 AM
+              Exams scheduled for today
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Available Downloads</CardTitle>
+            <CardTitle className="text-sm font-medium">Available Now</CardTitle>
             <Download className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">1</div>
+            <div className="text-2xl font-bold">
+              {upcomingExams.filter(e => {
+                const now = new Date();
+                const examDate = new Date(`${e.exam_date}T${e.start_time}`);
+                return examDate <= now;
+              }).length}
+            </div>
             <p className="text-xs text-muted-foreground">
-              Mathematics paper ready
+              Papers ready to download
             </p>
           </CardContent>
         </Card>
@@ -180,80 +318,52 @@ export default function Dashboard() {
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">7</div>
+            <div className="text-2xl font-bold">{stats.upcomingWeek}</div>
             <p className="text-xs text-muted-foreground">
-              Across 4 different subjects
+              Total exams this week
             </p>
           </CardContent>
         </Card>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Today's Schedule</CardTitle>
-            <CardDescription>Exams scheduled for today</CardDescription>
-          </CardHeader>
-          <CardContent>
+      <Card>
+        <CardHeader>
+          <CardTitle>Upcoming Schedule</CardTitle>
+          <CardDescription>Your scheduled exams for this week</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {upcomingExams.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No upcoming exams scheduled</p>
+          ) : (
             <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 border rounded-lg">
-                <div>
-                  <p className="font-medium">Mathematics - Final Exam</p>
-                  <p className="text-sm text-muted-foreground">10:00 AM - 1:00 PM</p>
-                  <p className="text-sm text-muted-foreground">Batch 2024-A</p>
-                </div>
-                <div className="text-right">
-                  <div className="text-sm text-success font-medium">Available</div>
-                  <div className="text-xs text-muted-foreground">Download opens in 30 min</div>
-                </div>
-              </div>
-              <div className="flex items-center justify-between p-4 border rounded-lg">
-                <div>
-                  <p className="font-medium">Physics - Lab Practical</p>
-                  <p className="text-sm text-muted-foreground">2:00 PM - 5:00 PM</p>
-                  <p className="text-sm text-muted-foreground">Batch 2024-B</p>
-                </div>
-                <div className="text-right">
-                  <div className="text-sm text-muted-foreground font-medium">Pending</div>
-                  <div className="text-xs text-muted-foreground">Not yet available</div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+              {upcomingExams.map((exam) => {
+                const now = new Date();
+                const examDateTime = new Date(`${exam.exam_date}T${exam.start_time}`);
+                const isAvailable = now >= examDateTime;
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Downloads</CardTitle>
-            <CardDescription>Your recent paper downloads</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center space-x-4">
-                <div className="w-2 h-2 bg-success rounded-full"></div>
-                <div className="flex-1 space-y-1">
-                  <p className="text-sm font-medium">Chemistry Final Paper</p>
-                  <p className="text-sm text-muted-foreground">Downloaded 2 days ago</p>
-                </div>
-              </div>
-              <div className="flex items-center space-x-4">
-                <div className="w-2 h-2 bg-success rounded-full"></div>
-                <div className="flex-1 space-y-1">
-                  <p className="text-sm font-medium">English Literature Exam</p>
-                  <p className="text-sm text-muted-foreground">Downloaded 1 week ago</p>
-                </div>
-              </div>
-              <div className="flex items-center space-x-4">
-                <div className="w-2 h-2 bg-success rounded-full"></div>
-                <div className="flex-1 space-y-1">
-                  <p className="text-sm font-medium">Biology Practical</p>
-                  <p className="text-sm text-muted-foreground">Downloaded 2 weeks ago</p>
-                </div>
-              </div>
+                return (
+                  <div key={exam.id} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div>
+                      <p className="font-medium">{exam.paper_title}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {formatDate(exam.exam_date)}, {exam.start_time}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <div className={`text-sm font-medium ${isAvailable ? 'text-success' : 'text-muted-foreground'}`}>
+                        {isAvailable ? 'Available' : 'Pending'}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {isAvailable ? 'Download now' : 'Not yet available'}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-          </CardContent>
-        </Card>
-      </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

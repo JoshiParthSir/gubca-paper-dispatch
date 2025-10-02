@@ -64,7 +64,7 @@ export default function LoginPage() {
           title: 'Welcome back!',
           description: 'You have been logged in successfully.',
         });
-        navigate('/dashboard');
+        // Don't navigate immediately - let auth state handle it
       }
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -109,7 +109,7 @@ export default function LoginPage() {
           title: 'Account Created!',
           description: 'You have been signed up successfully.',
         });
-        navigate('/dashboard');
+        // Don't navigate immediately - let auth state handle it
       }
     } catch (error) {
       if (error instanceof z.ZodError) {
