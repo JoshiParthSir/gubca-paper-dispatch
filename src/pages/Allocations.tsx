@@ -148,6 +148,7 @@ export default function Allocations() {
           end_time: formData.end_time,
           is_published: formData.is_published,
           allocated_by: user!.id,
+          college_id: null,
         }])
         .select()
         .single();

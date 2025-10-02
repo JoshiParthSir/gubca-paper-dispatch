@@ -53,7 +53,7 @@ export type Database = {
       allocations: {
         Row: {
           allocated_by: string
-          college_id: string
+          college_id: string | null
           created_at: string | null
           end_time: string
           exam_date: string
@@ -65,7 +65,7 @@ export type Database = {
         }
         Insert: {
           allocated_by: string
-          college_id: string
+          college_id?: string | null
           created_at?: string | null
           end_time: string
           exam_date: string
@@ -77,7 +77,7 @@ export type Database = {
         }
         Update: {
           allocated_by?: string
-          college_id?: string
+          college_id?: string | null
           created_at?: string | null
           end_time?: string
           exam_date?: string
