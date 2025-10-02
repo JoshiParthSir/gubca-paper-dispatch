@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      allocation_colleges: {
+        Row: {
+          allocation_id: string
+          college_id: string
+          created_at: string | null
+          id: string
+        }
+        Insert: {
+          allocation_id: string
+          college_id: string
+          created_at?: string | null
+          id?: string
+        }
+        Update: {
+          allocation_id?: string
+          college_id?: string
+          created_at?: string | null
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "allocation_colleges_allocation_id_fkey"
+            columns: ["allocation_id"]
+            isOneToOne: false
+            referencedRelation: "allocations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "allocation_colleges_college_id_fkey"
+            columns: ["college_id"]
+            isOneToOne: false
+            referencedRelation: "colleges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       allocations: {
         Row: {
           allocated_by: string

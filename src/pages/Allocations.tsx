@@ -18,10 +18,12 @@ interface Allocation {
   start_time: string;
   end_time: string;
   is_published: boolean;
-  colleges: {
-    name: string;
-    code: string;
-  };
+  allocation_colleges: {
+    colleges: {
+      name: string;
+      code: string;
+    };
+  }[];
   papers: {
     title: string;
     subject: string;
@@ -50,7 +52,7 @@ export default function Allocations() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
     paper_id: '',
-    college_id: '',
+    college_ids: [] as string[],
     exam_date: '',
     start_time: '',
     end_time: '',
@@ -67,7 +69,11 @@ export default function Allocations() {
     try {
       const { data, error } = await supabase
         .from('allocations')
-        .select('*, colleges(name, code), papers(title, subject)')
+        .select(`
+          *,
+          allocation_colleges(colleges(name, code)),
+          papers(title, subject)
+        `)
         .order('exam_date', { ascending: false });
 
       if (error) throw error;
@@ -122,12 +128,43 @@ export default function Allocations() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (formData.college_ids.length === 0) {
+      toast({
+        title: 'Error',
+        description: 'Please select at least one college',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
     try {
-      const { error } = await supabase
+      // Create allocation
+      const { data: allocation, error: allocError } = await supabase
         .from('allocations')
-        .insert([{ ...formData, allocated_by: user!.id }]);
+        .insert([{
+          paper_id: formData.paper_id,
+          exam_date: formData.exam_date,
+          start_time: formData.start_time,
+          end_time: formData.end_time,
+          is_published: formData.is_published,
+          allocated_by: user!.id,
+        }])
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (allocError) throw allocError;
+
+      // Create allocation_colleges entries
+      const allocationColleges = formData.college_ids.map(college_id => ({
+        allocation_id: allocation.id,
+        college_id,
+      }));
+
+      const { error: junctionError } = await supabase
+        .from('allocation_colleges')
+        .insert(allocationColleges);
+
+      if (junctionError) throw junctionError;
 
       toast({ title: 'Allocation created successfully' });
       setDialogOpen(false);
@@ -185,12 +222,21 @@ export default function Allocations() {
   const resetForm = () => {
     setFormData({
       paper_id: '',
-      college_id: '',
+      college_ids: [],
       exam_date: '',
       start_time: '',
       end_time: '',
       is_published: false,
     });
+  };
+
+  const toggleCollegeSelection = (collegeId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      college_ids: prev.college_ids.includes(collegeId)
+        ? prev.college_ids.filter(id => id !== collegeId)
+        : [...prev.college_ids, collegeId]
+    }));
   };
 
   if (loading) {
@@ -235,22 +281,29 @@ export default function Allocations() {
                 </Select>
               </div>
               <div>
-                <Label htmlFor="college">College</Label>
-                <Select
-                  value={formData.college_id}
-                  onValueChange={(value) => setFormData({ ...formData, college_id: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select college" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {colleges.map((college) => (
-                      <SelectItem key={college.id} value={college.id}>
+                <Label>Colleges (Select Multiple)</Label>
+                <div className="border rounded-md p-4 space-y-2 max-h-48 overflow-y-auto">
+                  {colleges.map((college) => (
+                    <div key={college.id} className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id={college.id}
+                        checked={formData.college_ids.includes(college.id)}
+                        onChange={() => toggleCollegeSelection(college.id)}
+                        className="h-4 w-4 rounded border-gray-300"
+                      />
+                      <label
+                        htmlFor={college.id}
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                      >
                         {college.name} ({college.code})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                      </label>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {formData.college_ids.length} college(s) selected
+                </p>
               </div>
               <div>
                 <Label htmlFor="exam_date">Exam Date</Label>
@@ -308,7 +361,7 @@ export default function Allocations() {
                   <div>
                     <div>{allocation.papers.title}</div>
                     <div className="text-sm font-normal text-muted-foreground">
-                      {allocation.colleges.name} ({allocation.colleges.code})
+                      {allocation.allocation_colleges.map(ac => ac.colleges.name).join(', ')}
                     </div>
                   </div>
                 </div>

@@ -34,10 +34,27 @@ export default function MyPapers() {
 
   const fetchAllocatedPapers = async () => {
     try {
+      // First get allocation IDs for this college
+      const { data: allocationColleges, error: acError } = await supabase
+        .from('allocation_colleges')
+        .select('allocation_id')
+        .eq('college_id', profile!.college_id);
+
+      if (acError) throw acError;
+
+      if (!allocationColleges || allocationColleges.length === 0) {
+        setPapers([]);
+        setLoading(false);
+        return;
+      }
+
+      const allocationIds = allocationColleges.map(ac => ac.allocation_id);
+
+      // Then get allocations with papers
       const { data, error } = await supabase
         .from('allocations')
         .select('id, exam_date, start_time, end_time, papers(id, title, subject, duration_minutes)')
-        .eq('college_id', profile!.college_id)
+        .in('id', allocationIds)
         .eq('is_published', true)
         .order('exam_date', { ascending: true });
 
