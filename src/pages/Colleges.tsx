@@ -9,6 +9,18 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
+import { z } from 'zod';
+
+const collegeSchema = z.object({
+  name: z.string().trim().min(2, 'Name must be at least 2 characters'),
+  code: z.string().trim().min(2, 'Code must be at least 2 characters'),
+  address: z.string().trim().optional(),
+  contact_email: z.string().trim().email('Invalid email').optional().or(z.literal('')),
+  contact_phone: z.string().trim().optional(),
+  admin_full_name: z.string().trim().min(2, 'Admin name must be at least 2 characters'),
+  admin_email: z.string().trim().email('Invalid admin email'),
+  admin_password: z.string().min(6, 'Password must be at least 6 characters'),
+});
 
 interface College {
   id: string;
@@ -33,6 +45,9 @@ export default function Colleges() {
     address: '',
     contact_email: '',
     contact_phone: '',
+    admin_full_name: '',
+    admin_email: '',
+    admin_password: '',
   });
 
   useEffect(() => {
@@ -64,31 +79,79 @@ export default function Colleges() {
     
     try {
       if (editingCollege) {
+        // When editing, only update college details (not admin)
         const { error } = await supabase
           .from('colleges')
-          .update(formData)
+          .update({
+            name: formData.name,
+            code: formData.code,
+            address: formData.address,
+            contact_email: formData.contact_email,
+            contact_phone: formData.contact_phone,
+          })
           .eq('id', editingCollege.id);
 
         if (error) throw error;
         toast({ title: 'College updated successfully' });
       } else {
-        const { error } = await supabase
-          .from('colleges')
-          .insert([{ ...formData, created_by: user!.id }]);
+        // Validate form data
+        const validatedData = collegeSchema.parse(formData);
 
-        if (error) throw error;
-        toast({ title: 'College created successfully' });
+        // First create the college
+        const { data: collegeData, error: collegeError } = await supabase
+          .from('colleges')
+          .insert([{
+            name: validatedData.name,
+            code: validatedData.code,
+            address: validatedData.address || null,
+            contact_email: validatedData.contact_email || null,
+            contact_phone: validatedData.contact_phone || null,
+            created_by: user!.id
+          }])
+          .select()
+          .single();
+
+        if (collegeError) throw collegeError;
+
+        // Then create the college admin
+        const { data: functionData, error: functionError } = await supabase.functions.invoke(
+          'create-college-admin',
+          {
+            body: {
+              email: validatedData.admin_email,
+              password: validatedData.admin_password,
+              full_name: validatedData.admin_full_name,
+              college_id: collegeData.id,
+            },
+          }
+        );
+
+        if (functionError) throw functionError;
+        if (functionData?.error) throw new Error(functionData.error);
+
+        toast({ 
+          title: 'Success',
+          description: 'College and admin account created successfully'
+        });
       }
 
       setDialogOpen(false);
       resetForm();
       fetchColleges();
     } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.message,
-        variant: 'destructive',
-      });
+      if (error instanceof z.ZodError) {
+        toast({
+          title: 'Validation Error',
+          description: error.errors[0].message,
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Error',
+          description: error.message,
+          variant: 'destructive',
+        });
+      }
     }
   };
 
@@ -120,6 +183,9 @@ export default function Colleges() {
       address: '',
       contact_email: '',
       contact_phone: '',
+      admin_full_name: '',
+      admin_email: '',
+      admin_password: '',
     });
     setEditingCollege(null);
   };
@@ -132,6 +198,9 @@ export default function Colleges() {
       address: college.address || '',
       contact_email: college.contact_email || '',
       contact_phone: college.contact_phone || '',
+      admin_full_name: '',
+      admin_email: '',
+      admin_password: '',
     });
     setDialogOpen(true);
   };
@@ -202,6 +271,45 @@ export default function Colleges() {
                   onChange={(e) => setFormData({ ...formData, contact_phone: e.target.value })}
                 />
               </div>
+
+              {!editingCollege && (
+                <>
+                  <div className="pt-4 border-t">
+                    <h3 className="text-sm font-semibold mb-3">College Admin Details</h3>
+                  </div>
+                  <div>
+                    <Label htmlFor="admin_full_name">Admin Full Name</Label>
+                    <Input
+                      id="admin_full_name"
+                      value={formData.admin_full_name}
+                      onChange={(e) => setFormData({ ...formData, admin_full_name: e.target.value })}
+                      required={!editingCollege}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="admin_email">Admin Email</Label>
+                    <Input
+                      id="admin_email"
+                      type="email"
+                      value={formData.admin_email}
+                      onChange={(e) => setFormData({ ...formData, admin_email: e.target.value })}
+                      required={!editingCollege}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="admin_password">Admin Password</Label>
+                    <Input
+                      id="admin_password"
+                      type="password"
+                      value={formData.admin_password}
+                      onChange={(e) => setFormData({ ...formData, admin_password: e.target.value })}
+                      required={!editingCollege}
+                      minLength={6}
+                    />
+                  </div>
+                </>
+              )}
+
               <Button type="submit" className="w-full">
                 {editingCollege ? 'Update' : 'Create'} College
               </Button>
