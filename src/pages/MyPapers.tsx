@@ -29,6 +29,9 @@ export default function MyPapers() {
   useEffect(() => {
     if (profile?.college_id) {
       fetchAllocatedPapers();
+    } else if (profile) {
+      // Profile loaded but no college_id, stop loading
+      setLoading(false);
     }
   }, [profile]);
 
