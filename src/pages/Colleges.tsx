@@ -223,96 +223,138 @@ export default function Colleges() {
               Add College
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>{editingCollege ? 'Edit College' : 'Add New College'}</DialogTitle>
+              <DialogTitle className="text-xl">
+                {editingCollege ? 'Edit College' : 'Add New College'}
+              </DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <Label htmlFor="name">College Name</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="code">College Code</Label>
-                <Input
-                  id="code"
-                  value={formData.code}
-                  onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="address">Address</Label>
-                <Textarea
-                  id="address"
-                  value={formData.address}
-                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label htmlFor="email">Contact Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.contact_email}
-                  onChange={(e) => setFormData({ ...formData, contact_email: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label htmlFor="phone">Contact Phone</Label>
-                <Input
-                  id="phone"
-                  value={formData.contact_phone}
-                  onChange={(e) => setFormData({ ...formData, contact_phone: e.target.value })}
-                />
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* College Information Section */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                  College Information
+                </h3>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">College Name *</Label>
+                    <Input
+                      id="name"
+                      placeholder="Enter college name"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="code">College Code *</Label>
+                    <Input
+                      id="code"
+                      placeholder="Enter college code"
+                      value={formData.code}
+                      onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="address">Address</Label>
+                  <Textarea
+                    id="address"
+                    placeholder="Enter college address"
+                    value={formData.address}
+                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                    rows={3}
+                  />
+                </div>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Contact Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="college@example.com"
+                      value={formData.contact_email}
+                      onChange={(e) => setFormData({ ...formData, contact_email: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Contact Phone</Label>
+                    <Input
+                      id="phone"
+                      placeholder="+1 234 567 8900"
+                      value={formData.contact_phone}
+                      onChange={(e) => setFormData({ ...formData, contact_phone: e.target.value })}
+                    />
+                  </div>
+                </div>
               </div>
 
+              {/* Admin Details Section - Only for new colleges */}
               {!editingCollege && (
-                <>
-                  <div className="pt-4 border-t">
-                    <h3 className="text-sm font-semibold mb-3">College Admin Details</h3>
-                  </div>
+                <div className="space-y-4 pt-4 border-t">
                   <div>
-                    <Label htmlFor="admin_full_name">Admin Full Name</Label>
-                    <Input
-                      id="admin_full_name"
-                      value={formData.admin_full_name}
-                      onChange={(e) => setFormData({ ...formData, admin_full_name: e.target.value })}
-                      required={!editingCollege}
-                    />
+                    <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                      College Admin Account
+                    </h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Create login credentials for the college administrator
+                    </p>
                   </div>
-                  <div>
-                    <Label htmlFor="admin_email">Admin Email</Label>
-                    <Input
-                      id="admin_email"
-                      type="email"
-                      value={formData.admin_email}
-                      onChange={(e) => setFormData({ ...formData, admin_email: e.target.value })}
-                      required={!editingCollege}
-                    />
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2 md:col-span-2">
+                      <Label htmlFor="admin_full_name">Admin Full Name *</Label>
+                      <Input
+                        id="admin_full_name"
+                        placeholder="Enter admin full name"
+                        value={formData.admin_full_name}
+                        onChange={(e) => setFormData({ ...formData, admin_full_name: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="admin_email">Admin Email *</Label>
+                      <Input
+                        id="admin_email"
+                        type="email"
+                        placeholder="admin@example.com"
+                        value={formData.admin_email}
+                        onChange={(e) => setFormData({ ...formData, admin_email: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="admin_password">Admin Password *</Label>
+                      <Input
+                        id="admin_password"
+                        type="password"
+                        placeholder="Minimum 6 characters"
+                        value={formData.admin_password}
+                        onChange={(e) => setFormData({ ...formData, admin_password: e.target.value })}
+                        required
+                        minLength={6}
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <Label htmlFor="admin_password">Admin Password</Label>
-                    <Input
-                      id="admin_password"
-                      type="password"
-                      value={formData.admin_password}
-                      onChange={(e) => setFormData({ ...formData, admin_password: e.target.value })}
-                      required={!editingCollege}
-                      minLength={6}
-                    />
-                  </div>
-                </>
+                </div>
               )}
 
-              <Button type="submit" className="w-full">
-                {editingCollege ? 'Update' : 'Create'} College
-              </Button>
+              <div className="flex gap-3 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => {
+                    setDialogOpen(false);
+                    resetForm();
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" className="flex-1">
+                  {editingCollege ? 'Update College' : 'Create College & Admin'}
+                </Button>
+              </div>
             </form>
           </DialogContent>
         </Dialog>
