@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -28,6 +29,14 @@ export default function LoginPage() {
   const [activeTab, setActiveTab] = useState('login');
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user, profile, loading: authLoading } = useAuth();
+
+  // Redirect to dashboard if user is already authenticated
+  useEffect(() => {
+    if (!authLoading && user && profile) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [user, profile, authLoading, navigate]);
 
   const [loginForm, setLoginForm] = useState({
     email: '',
@@ -64,7 +73,6 @@ export default function LoginPage() {
           title: 'Welcome back!',
           description: 'You have been logged in successfully.',
         });
-        // Don't navigate immediately - let auth state handle it
       }
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -109,7 +117,6 @@ export default function LoginPage() {
           title: 'Account Created!',
           description: 'You have been signed up successfully.',
         });
-        // Don't navigate immediately - let auth state handle it
       }
     } catch (error) {
       if (error instanceof z.ZodError) {
