@@ -17,6 +17,7 @@ interface AllocatedPaper {
     title: string;
     subject: string;
     duration_minutes: number;
+    file_path: string;
   };
 }
 
@@ -56,7 +57,7 @@ export default function MyPapers() {
       // Then get allocations with papers
       const { data, error } = await supabase
         .from('allocations')
-        .select('id, exam_date, start_time, end_time, papers(id, title, subject, duration_minutes)')
+        .select('id, exam_date, start_time, end_time, papers(id, title, subject, duration_minutes, file_path)')
         .in('id', allocationIds)
         .eq('is_published', true)
         .order('exam_date', { ascending: true });
@@ -82,7 +83,7 @@ export default function MyPapers() {
     return now >= examDateTime && now <= endDateTime;
   };
 
-  const handleDownload = async (allocationId: string, paperId: string, title: string) => {
+  const handleDownload = async (allocationId: string, paperId: string, title: string, filePath: string) => {
     try {
       // Log the download
       const { error: logError } = await supabase
@@ -94,14 +95,19 @@ export default function MyPapers() {
 
       if (logError) throw logError;
 
-      // In production, this would download the actual file
+      // Download the actual file
+      const link = document.createElement('a');
+      link.href = filePath;
+      link.download = `${title}.pdf`;
+      link.target = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
       toast({
         title: 'Download Started',
         description: `Downloading ${title}`,
       });
-
-      // Placeholder for actual file download logic
-      console.log('Downloading paper:', paperId);
       
     } catch (error: any) {
       toast({
@@ -155,7 +161,8 @@ export default function MyPapers() {
                           handleDownload(
                             allocation.id,
                             allocation.papers.id,
-                            allocation.papers.title
+                            allocation.papers.title,
+                            allocation.papers.file_path
                           )
                         }
                       >
