@@ -132,10 +132,10 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-secondary/10 to-accent/10 p-4">
-      <Card className="w-full max-w-md shadow-xl">
-        <CardHeader className="text-center">
-          <div className="mx-auto mb-4 w-12 h-12 bg-primary rounded-lg flex items-center justify-center">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-secondary/10 to-accent/10 p-4 animate-fade-in">
+      <Card className="w-full max-w-md shadow-xl animate-scale-in hover-lift">
+        <CardHeader className="text-center animate-fade-in-down">
+          <div className="mx-auto mb-4 w-12 h-12 bg-primary rounded-lg flex items-center justify-center animate-bounce-in hover-scale">
             <GraduationCap className="h-6 w-6 text-primary-foreground" />
           </div>
           <CardTitle className="text-2xl">Online Exam System</CardTitle>
@@ -144,16 +144,16 @@ export default function LoginPage() {
           </CardDescription>
         </CardHeader>
 
-        <CardContent>
+        <CardContent className="animate-fade-in-up" style={{ animationDelay: '200ms' }}>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">Login</TabsTrigger>
-              <TabsTrigger value="signup">Sign Up</TabsTrigger>
+              <TabsTrigger value="login" className="transition-all">Login</TabsTrigger>
+              <TabsTrigger value="signup" className="transition-all">Sign Up</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="login">
+            <TabsContent value="login" className="animate-fade-in">
               <form onSubmit={handleLogin} className="space-y-4">
-                <div className="space-y-2">
+                <div className="space-y-2 animate-fade-in-up" style={{ animationDelay: '100ms' }}>
                   <Label htmlFor="email">Email</Label>
                   <Input
                     id="email"
@@ -161,10 +161,11 @@ export default function LoginPage() {
                     placeholder="Enter your email"
                     value={loginForm.email}
                     onChange={(e) => setLoginForm(prev => ({ ...prev, email: e.target.value }))}
+                    className="transition-all focus:scale-[1.02]"
                     required
                   />
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-2 animate-fade-in-up" style={{ animationDelay: '200ms' }}>
                   <Label htmlFor="password">Password</Label>
                   <Input
                     id="password"
@@ -172,19 +173,20 @@ export default function LoginPage() {
                     placeholder="Enter your password"
                     value={loginForm.password}
                     onChange={(e) => setLoginForm(prev => ({ ...prev, password: e.target.value }))}
+                    className="transition-all focus:scale-[1.02]"
                     required
                   />
                 </div>
-                <Button type="submit" className="w-full" disabled={loading}>
+                <Button type="submit" className="w-full hover-scale hover-glow animate-fade-in-up" style={{ animationDelay: '300ms' }} disabled={loading}>
                   {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Login
                 </Button>
               </form>
             </TabsContent>
 
-            <TabsContent value="signup">
+            <TabsContent value="signup" className="animate-fade-in">
               <form onSubmit={handleSignup} className="space-y-4">
-                <div className="space-y-2">
+                <div className="space-y-2 animate-fade-in-up" style={{ animationDelay: '100ms' }}>
                   <Label htmlFor="fullName">Full Name</Label>
                   <Input
                     id="fullName"
@@ -192,10 +194,11 @@ export default function LoginPage() {
                     placeholder="Enter your full name"
                     value={signupForm.fullName}
                     onChange={(e) => setSignupForm(prev => ({ ...prev, fullName: e.target.value }))}
+                    className="transition-all focus:scale-[1.02]"
                     required
                   />
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-2 animate-fade-in-up" style={{ animationDelay: '150ms' }}>
                   <Label htmlFor="signup-email">Email</Label>
                   <Input
                     id="signup-email"
@@ -203,10 +206,11 @@ export default function LoginPage() {
                     placeholder="Enter your email"
                     value={signupForm.email}
                     onChange={(e) => setSignupForm(prev => ({ ...prev, email: e.target.value }))}
+                    className="transition-all focus:scale-[1.02]"
                     required
                   />
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-2 animate-fade-in-up" style={{ animationDelay: '200ms' }}>
                   <Label htmlFor="signup-password">Password</Label>
                   <Input
                     id="signup-password"
@@ -214,10 +218,11 @@ export default function LoginPage() {
                     placeholder="Enter your password"
                     value={signupForm.password}
                     onChange={(e) => setSignupForm(prev => ({ ...prev, password: e.target.value }))}
+                    className="transition-all focus:scale-[1.02]"
                     required
                   />
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-2 animate-fade-in-up" style={{ animationDelay: '250ms' }}>
                   <Label htmlFor="role">Role</Label>
                   <Select
                     value={signupForm.role}
@@ -225,16 +230,16 @@ export default function LoginPage() {
                       setSignupForm(prev => ({ ...prev, role: value }))
                     }
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="transition-all">
                       <SelectValue placeholder="Select your role" />
                     </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="chairperson">Chairperson</SelectItem>
-                      <SelectItem value="college_admin">College Admin</SelectItem>
+                    <SelectContent className="animate-scale-in bg-popover z-50">
+                      <SelectItem value="chairperson" className="cursor-pointer">Chairperson</SelectItem>
+                      <SelectItem value="college_admin" className="cursor-pointer">College Admin</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-                <Button type="submit" className="w-full" disabled={loading}>
+                <Button type="submit" className="w-full hover-scale hover-glow animate-fade-in-up" style={{ animationDelay: '300ms' }} disabled={loading}>
                   {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Sign Up
                 </Button>
@@ -243,7 +248,7 @@ export default function LoginPage() {
           </Tabs>
         </CardContent>
 
-        <CardFooter className="text-center">
+        <CardFooter className="text-center animate-fade-in-up" style={{ animationDelay: '400ms' }}>
           <p className="text-sm text-muted-foreground">
             Secure authentication for exam management
           </p>

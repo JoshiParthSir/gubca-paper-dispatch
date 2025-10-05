@@ -193,19 +193,19 @@ export default function Papers() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center animate-fade-in-down">
         <h1 className="text-3xl font-bold">Exam Papers</h1>
         <Dialog open={dialogOpen} onOpenChange={(open) => {
           setDialogOpen(open);
           if (!open) resetForm();
         }}>
           <DialogTrigger asChild>
-            <Button>
+            <Button className="hover-scale hover-glow">
               <Plus className="mr-2 h-4 w-4" />
               Upload Paper
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="animate-scale-in bg-popover z-50">
             <DialogHeader>
               <DialogTitle>Upload New Paper</DialogTitle>
             </DialogHeader>
@@ -266,7 +266,7 @@ export default function Papers() {
                   required
                 />
               </div>
-              <Button type="submit" className="w-full" disabled={uploading}>
+              <Button type="submit" className="w-full hover-scale" disabled={uploading}>
                 {uploading ? 'Uploading...' : 'Upload Paper'}
               </Button>
             </form>
@@ -275,18 +275,23 @@ export default function Papers() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {papers.map((paper) => (
-          <Card key={paper.id}>
+        {papers.map((paper, index) => (
+          <Card 
+            key={paper.id}
+            className="hover-lift animate-fade-in-up card-gradient"
+            style={{ animationDelay: `${index * 100}ms` }}
+          >
             <CardHeader>
               <CardTitle className="flex justify-between items-start">
                 <div className="flex items-start gap-2">
-                  <FileText className="h-5 w-5 mt-1" />
+                  <FileText className="h-5 w-5 mt-1 text-primary" />
                   <span>{paper.title}</span>
                 </div>
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => handleDelete(paper.id, paper.file_path)}
+                  className="hover-scale hover:bg-destructive hover:text-destructive-foreground transition-colors"
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>

@@ -32,11 +32,11 @@ export function DashboardHeader() {
   };
 
   return (
-    <header className="h-16 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="h-16 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 animate-fade-in-down">
       <div className="flex h-full items-center justify-between px-6">
         <div className="flex items-center gap-4">
-          <SidebarTrigger className="h-8 w-8" />
-          <div>
+          <SidebarTrigger className="h-8 w-8 hover-scale transition-transform" />
+          <div className="animate-fade-in">
             <h1 className="text-lg font-semibold">
               {profile?.role === 'chairperson' ? 'Chairperson Dashboard' : 'College Admin Dashboard'}
             </h1>
@@ -46,15 +46,15 @@ export function DashboardHeader() {
         <div className="flex items-center gap-4">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                <Avatar className="h-8 w-8">
+              <Button variant="ghost" className="relative h-8 w-8 rounded-full hover-scale transition-all hover-glow">
+                <Avatar className="h-8 w-8 animate-scale-in">
                   <AvatarFallback className="bg-primary text-primary-foreground">
                     {profile?.full_name ? getInitials(profile.full_name) : 'U'}
                   </AvatarFallback>
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56" align="end" forceMount>
+            <DropdownMenuContent className="w-56 animate-scale-in bg-popover z-50" align="end" forceMount>
               <DropdownMenuLabel className="font-normal">
                 <div className="flex flex-col space-y-1">
                   <p className="text-sm font-medium leading-none">{profile?.full_name}</p>
@@ -67,12 +67,12 @@ export function DashboardHeader() {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
+              <DropdownMenuItem className="cursor-pointer transition-colors hover:bg-accent">
                 <User className="mr-2 h-4 w-4" />
                 <span>Profile</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleSignOut}>
+              <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer transition-colors hover:bg-destructive hover:text-destructive-foreground">
                 <LogOut className="mr-2 h-4 w-4" />
                 <span>Log out</span>
               </DropdownMenuItem>

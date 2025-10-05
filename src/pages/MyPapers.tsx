@@ -132,18 +132,18 @@ export default function MyPapers() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold">My Allocated Papers</h1>
+      <h1 className="text-3xl font-bold animate-fade-in-down">My Allocated Papers</h1>
 
       {papers.length === 0 ? (
-        <Card>
+        <Card className="animate-fade-in">
           <CardContent className="flex flex-col items-center justify-center py-12">
-            <FileText className="h-12 w-12 text-muted-foreground mb-4" />
-            <p className="text-muted-foreground">No papers allocated yet</p>
+            <FileText className="h-12 w-12 text-muted-foreground mb-4 animate-bounce-in" />
+            <p className="text-muted-foreground animate-fade-in-up">No papers allocated yet</p>
           </CardContent>
         </Card>
       ) : (
         <div className="grid gap-4">
-          {papers.map((allocation) => {
+          {papers.map((allocation, index) => {
             const downloadable = canDownload(
               allocation.exam_date,
               allocation.start_time,
@@ -151,7 +151,11 @@ export default function MyPapers() {
             );
 
             return (
-              <Card key={allocation.id}>
+              <Card 
+                key={allocation.id}
+                className="hover-lift animate-fade-in-up card-gradient"
+                style={{ animationDelay: `${index * 100}ms` }}
+              >
                 <CardHeader>
                   <CardTitle className="flex justify-between items-start">
                     <div className="flex items-start gap-2">
@@ -173,12 +177,13 @@ export default function MyPapers() {
                             allocation.papers.file_path
                           )
                         }
+                        className="hover-scale hover-glow"
                       >
                         <Download className="mr-2 h-4 w-4" />
                         Download
                       </Button>
                     ) : (
-                      <Badge variant="secondary">
+                      <Badge variant="secondary" className="animate-pulse">
                         <Clock className="mr-1 h-3 w-3" />
                         Not Available
                       </Badge>

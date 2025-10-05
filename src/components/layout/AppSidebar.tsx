@@ -63,13 +63,13 @@ export function AppSidebar() {
     >
       <SidebarContent>
         {/* App Logo */}
-        <div className="p-4 border-b border-sidebar-border">
+        <div className="p-4 border-b border-sidebar-border animate-fade-in">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-sidebar-primary rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 bg-sidebar-primary rounded-lg flex items-center justify-center animate-bounce-in hover-scale transition-all">
               <GraduationCap className="h-4 w-4 text-sidebar-primary-foreground" />
             </div>
             {open && (
-              <div>
+              <div className="animate-fade-in-left">
                 <h1 className="font-semibold text-sidebar-foreground">Exam System</h1>
                 <p className="text-xs text-sidebar-foreground/70">
                   {profile?.role === 'chairperson' ? 'Chairperson' : 'College Admin'}
@@ -83,11 +83,15 @@ export function AppSidebar() {
           <SidebarGroupLabel>Main Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {items.map((item) => (
-                <SidebarMenuItem key={item.title}>
+              {items.map((item, index) => (
+                <SidebarMenuItem 
+                  key={item.title}
+                  className="animate-fade-in-up"
+                  style={{ animationDelay: `${index * 50}ms` }}
+                >
                   <SidebarMenuButton asChild>
                     <NavLink to={item.url} end className={getNavCls} onClick={handleNavClick}>
-                      <item.icon className="mr-2 h-4 w-4" />
+                      <item.icon className="mr-2 h-4 w-4 transition-transform hover:scale-110" />
                       {open && <span>{item.title}</span>}
                     </NavLink>
                   </SidebarMenuButton>
@@ -102,10 +106,10 @@ export function AppSidebar() {
             <SidebarGroupLabel>Settings</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                <SidebarMenuItem>
+                <SidebarMenuItem className="animate-fade-in-up" style={{ animationDelay: '400ms' }}>
                   <SidebarMenuButton asChild>
                     <NavLink to="/dashboard/settings" className={getNavCls} onClick={handleNavClick}>
-                      <Settings className="mr-2 h-4 w-4" />
+                      <Settings className="mr-2 h-4 w-4 transition-transform hover:rotate-90 hover:scale-110" />
                       {open && <span>Settings</span>}
                     </NavLink>
                   </SidebarMenuButton>

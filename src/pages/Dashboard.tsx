@@ -178,7 +178,7 @@ export default function Dashboard() {
   if (profile?.role === 'chairperson') {
     return (
       <div className="space-y-6">
-        <div>
+        <div className="animate-fade-in-down">
           <h1 className="text-3xl font-bold tracking-tight">Chairperson Dashboard</h1>
           <p className="text-muted-foreground">
             Manage colleges, batches, and exam paper allocations
@@ -186,10 +186,10 @@ export default function Dashboard() {
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card>
+          <Card className="hover-lift animate-fade-in-up card-gradient" style={{ animationDelay: '0ms' }}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Colleges</CardTitle>
-              <Building2 className="h-4 w-4 text-muted-foreground" />
+              <Building2 className="h-4 w-4 text-primary animate-pulse" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats.colleges}</div>
@@ -199,10 +199,10 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="hover-lift animate-fade-in-up card-gradient" style={{ animationDelay: '100ms' }}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Active Batches</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
+              <Users className="h-4 w-4 text-secondary animate-pulse" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats.batches}</div>
@@ -212,10 +212,10 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="hover-lift animate-fade-in-up card-gradient" style={{ animationDelay: '200ms' }}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Exam Papers</CardTitle>
-              <FileText className="h-4 w-4 text-muted-foreground" />
+              <FileText className="h-4 w-4 text-accent animate-pulse" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats.papers}</div>
@@ -225,10 +225,10 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="hover-lift animate-fade-in-up card-gradient" style={{ animationDelay: '300ms' }}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Allocations</CardTitle>
-              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <Calendar className="h-4 w-4 text-success animate-pulse" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats.allocations}</div>
@@ -239,25 +239,29 @@ export default function Dashboard() {
           </Card>
         </div>
 
-        <Card>
+        <Card className="animate-fade-in hover-lift" style={{ animationDelay: '400ms' }}>
           <CardHeader>
             <CardTitle>Upcoming Exams</CardTitle>
             <CardDescription>Scheduled for the next 7 days</CardDescription>
           </CardHeader>
           <CardContent>
             {upcomingExams.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No upcoming exams scheduled</p>
+              <p className="text-sm text-muted-foreground animate-fade-in-up">No upcoming exams scheduled</p>
             ) : (
               <div className="space-y-4">
-                {upcomingExams.map((exam) => (
-                  <div key={exam.id} className="flex items-center justify-between">
+                {upcomingExams.map((exam, index) => (
+                  <div 
+                    key={exam.id} 
+                    className="flex items-center justify-between p-3 rounded-lg border hover-lift transition-all"
+                    style={{ animationDelay: `${(index + 1) * 100}ms` }}
+                  >
                     <div>
                       <p className="text-sm font-medium">{exam.paper_title}</p>
                       <p className="text-sm text-muted-foreground">
                         {formatDate(exam.exam_date)}, {exam.start_time}
                       </p>
                     </div>
-                    <div className={`text-sm font-medium ${exam.is_published ? 'text-success' : 'text-warning'}`}>
+                    <div className={`text-sm font-medium px-3 py-1 rounded-full ${exam.is_published ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'} transition-all hover-scale`}>
                       {exam.is_published ? 'Published' : 'Draft'}
                     </div>
                   </div>
@@ -272,7 +276,7 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <div>
+      <div className="animate-fade-in-down">
         <h1 className="text-3xl font-bold tracking-tight">College Admin Dashboard</h1>
         <p className="text-muted-foreground">
           View scheduled exams and download papers
@@ -280,10 +284,10 @@ export default function Dashboard() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <Card>
+        <Card className="hover-lift animate-fade-in-up card-gradient" style={{ animationDelay: '0ms' }}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Scheduled Today</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <Calendar className="h-4 w-4 text-primary animate-pulse" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.scheduledToday}</div>
@@ -293,10 +297,10 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="hover-lift animate-fade-in-up card-gradient" style={{ animationDelay: '100ms' }}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Available Now</CardTitle>
-            <Download className="h-4 w-4 text-muted-foreground" />
+            <Download className="h-4 w-4 text-success animate-pulse" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -312,10 +316,10 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="hover-lift animate-fade-in-up card-gradient" style={{ animationDelay: '200ms' }}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Upcoming This Week</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
+            <Clock className="h-4 w-4 text-warning animate-pulse" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.upcomingWeek}</div>
@@ -326,23 +330,27 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      <Card>
+      <Card className="animate-fade-in hover-lift" style={{ animationDelay: '300ms' }}>
         <CardHeader>
           <CardTitle>Upcoming Schedule</CardTitle>
           <CardDescription>Your scheduled exams for this week</CardDescription>
         </CardHeader>
         <CardContent>
           {upcomingExams.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No upcoming exams scheduled</p>
+            <p className="text-sm text-muted-foreground animate-fade-in-up">No upcoming exams scheduled</p>
           ) : (
             <div className="space-y-4">
-              {upcomingExams.map((exam) => {
+              {upcomingExams.map((exam, index) => {
                 const now = new Date();
                 const examDateTime = new Date(`${exam.exam_date}T${exam.start_time}`);
                 const isAvailable = now >= examDateTime;
 
                 return (
-                  <div key={exam.id} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div 
+                    key={exam.id} 
+                    className="flex items-center justify-between p-4 border rounded-lg hover-lift transition-all"
+                    style={{ animationDelay: `${(index + 1) * 100}ms` }}
+                  >
                     <div>
                       <p className="font-medium">{exam.paper_title}</p>
                       <p className="text-sm text-muted-foreground">
@@ -350,10 +358,10 @@ export default function Dashboard() {
                       </p>
                     </div>
                     <div className="text-right">
-                      <div className={`text-sm font-medium ${isAvailable ? 'text-success' : 'text-muted-foreground'}`}>
+                      <div className={`text-sm font-medium px-3 py-1 rounded-full transition-all hover-scale ${isAvailable ? 'bg-success/10 text-success' : 'bg-muted text-muted-foreground'}`}>
                         {isAvailable ? 'Available' : 'Pending'}
                       </div>
-                      <div className="text-xs text-muted-foreground">
+                      <div className="text-xs text-muted-foreground mt-1">
                         {isAvailable ? 'Download now' : 'Not yet available'}
                       </div>
                     </div>
