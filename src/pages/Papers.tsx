@@ -103,9 +103,21 @@ export default function Papers() {
     setUploading(true);
 
     try {
-      // Upload file to storage (placeholder - storage needs to be set up)
-      const filePath = `papers/${Date.now()}_${selectedFile.name}`;
+      // Upload file to storage
+      const fileExt = selectedFile.name.split('.').pop();
+      const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const filePath = `${fileName}`;
       
+      const { error: uploadError } = await supabase.storage
+        .from('papers')
+        .upload(filePath, selectedFile, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (uploadError) throw uploadError;
+
+      // Insert paper record with storage path
       const { error: insertError } = await supabase
         .from('papers')
         .insert([{
@@ -115,7 +127,11 @@ export default function Papers() {
           uploaded_by: user!.id,
         }]);
 
-      if (insertError) throw insertError;
+      if (insertError) {
+        // Clean up uploaded file if insert fails
+        await supabase.storage.from('papers').remove([filePath]);
+        throw insertError;
+      }
 
       toast({ title: 'Paper uploaded successfully' });
       setDialogOpen(false);
@@ -132,10 +148,18 @@ export default function Papers() {
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: string, filePath: string) => {
     if (!confirm('Are you sure you want to delete this paper?')) return;
 
     try {
+      // Delete from storage first
+      const { error: storageError } = await supabase.storage
+        .from('papers')
+        .remove([filePath]);
+
+      if (storageError) throw storageError;
+
+      // Then delete from database
       const { error } = await supabase
         .from('papers')
         .delete()
@@ -262,7 +286,7 @@ export default function Papers() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => handleDelete(paper.id)}
+                  onClick={() => handleDelete(paper.id, paper.file_path)}
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>

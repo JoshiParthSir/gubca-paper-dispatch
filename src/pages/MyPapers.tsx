@@ -85,6 +85,14 @@ export default function MyPapers() {
 
   const handleDownload = async (allocationId: string, paperId: string, title: string, filePath: string) => {
     try {
+      // Get signed URL from storage
+      const { data: urlData, error: urlError } = await supabase.storage
+        .from('papers')
+        .createSignedUrl(filePath, 60); // URL valid for 60 seconds
+
+      if (urlError) throw urlError;
+      if (!urlData?.signedUrl) throw new Error('Failed to generate download URL');
+
       // Log the download
       const { error: logError } = await supabase
         .from('download_logs')
@@ -93,11 +101,11 @@ export default function MyPapers() {
           downloaded_by: user!.id,
         }]);
 
-      if (logError) throw logError;
+      if (logError) console.error('Failed to log download:', logError);
 
       // Download the actual file
       const link = document.createElement('a');
-      link.href = filePath;
+      link.href = urlData.signedUrl;
       link.download = `${title}.pdf`;
       link.target = '_blank';
       document.body.appendChild(link);

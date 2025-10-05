@@ -39,7 +39,7 @@ const collegeAdminItems = [
 ];
 
 export function AppSidebar() {
-  const { open } = useSidebar();
+  const { open, setOpen } = useSidebar();
   const { profile } = useAuth();
   const location = useLocation();
   const currentPath = location.pathname;
@@ -49,6 +49,13 @@ export function AppSidebar() {
   const isExpanded = items.some((i) => isActive(i.url));
   const getNavCls = ({ isActive }: { isActive: boolean }) =>
     isActive ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium' : 'hover:bg-sidebar-accent/50';
+  
+  const handleNavClick = () => {
+    // Collapse sidebar on mobile after navigation
+    if (window.innerWidth < 768) {
+      setOpen(false);
+    }
+  };
 
   return (
     <Sidebar
@@ -79,7 +86,7 @@ export function AppSidebar() {
               {items.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <NavLink to={item.url} end className={getNavCls}>
+                    <NavLink to={item.url} end className={getNavCls} onClick={handleNavClick}>
                       <item.icon className="mr-2 h-4 w-4" />
                       {open && <span>{item.title}</span>}
                     </NavLink>
@@ -97,7 +104,7 @@ export function AppSidebar() {
               <SidebarMenu>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
-                    <NavLink to="/dashboard/settings" className={getNavCls}>
+                    <NavLink to="/dashboard/settings" className={getNavCls} onClick={handleNavClick}>
                       <Settings className="mr-2 h-4 w-4" />
                       {open && <span>Settings</span>}
                     </NavLink>
