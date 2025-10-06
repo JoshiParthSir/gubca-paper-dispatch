@@ -85,13 +85,22 @@ export default function MyPapers() {
 
   const handleDownload = async (allocationId: string, paperId: string, title: string, filePath: string) => {
     try {
+      console.log('Starting download for:', { allocationId, paperId, title, filePath });
+
       // Get signed URL from storage
       const { data: urlData, error: urlError } = await supabase.storage
         .from('papers')
-        .createSignedUrl(filePath, 60); // URL valid for 60 seconds
+        .createSignedUrl(filePath, 3600); // URL valid for 1 hour
 
-      if (urlError) throw urlError;
-      if (!urlData?.signedUrl) throw new Error('Failed to generate download URL');
+      console.log('Signed URL response:', { urlData, urlError });
+
+      if (urlError) {
+        console.error('Storage error:', urlError);
+        throw urlError;
+      }
+      if (!urlData?.signedUrl) {
+        throw new Error('Failed to generate download URL');
+      }
 
       // Log the download
       const { error: logError } = await supabase
@@ -103,14 +112,21 @@ export default function MyPapers() {
 
       if (logError) console.error('Failed to log download:', logError);
 
-      // Download the actual file
+      // Fetch and download the file
+      const response = await fetch(urlData.signedUrl);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch file: ${response.statusText}`);
+      }
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
-      link.href = urlData.signedUrl;
+      link.href = url;
       link.download = `${title}.pdf`;
-      link.target = '_blank';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
 
       toast({
         title: 'Download Started',
@@ -118,9 +134,10 @@ export default function MyPapers() {
       });
       
     } catch (error: any) {
+      console.error('Download error:', error);
       toast({
-        title: 'Error',
-        description: error.message,
+        title: 'Download Error',
+        description: error.message || 'Failed to download the file',
         variant: 'destructive',
       });
     }

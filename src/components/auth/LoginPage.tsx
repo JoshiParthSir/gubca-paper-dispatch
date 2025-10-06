@@ -5,11 +5,10 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, GraduationCap } from 'lucide-react';
+import { Loader2, GraduationCap, ArrowLeft, Mail, Lock, User } from 'lucide-react';
 import { z } from 'zod';
 
 const loginSchema = z.object({
@@ -26,7 +25,7 @@ const signupSchema = z.object({
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState('login');
+  const [isSignUp, setIsSignUp] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, profile, loading: authLoading } = useAuth();
@@ -132,127 +131,169 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-secondary/10 to-accent/10 p-4 animate-fade-in">
-      <Card className="w-full max-w-md shadow-xl animate-scale-in hover-lift">
-        <CardHeader className="text-center animate-fade-in-down">
-          <div className="mx-auto mb-4 w-12 h-12 bg-primary rounded-lg flex items-center justify-center animate-bounce-in hover-scale">
-            <GraduationCap className="h-6 w-6 text-primary-foreground" />
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/20 via-background to-secondary/20 p-4 animate-fade-in relative overflow-hidden">
+      {/* Animated background effects */}
+      <div className="absolute inset-0 bg-grid-white/[0.02] pointer-events-none" />
+      <div className="absolute top-20 left-10 w-72 h-72 bg-primary/30 rounded-full blur-3xl animate-pulse" />
+      <div className="absolute bottom-20 right-10 w-96 h-96 bg-secondary/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+      
+      <Card className="w-full max-w-md relative animate-scale-in shadow-2xl border-primary/20 backdrop-blur-xl bg-card/95 hover-lift">
+        {isSignUp && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsSignUp(false)}
+            className="absolute top-4 left-4 hover-scale"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back
+          </Button>
+        )}
+
+        <CardHeader className="space-y-4 animate-fade-in-down text-center">
+          <div className="flex justify-center mb-4">
+            <div className="w-16 h-16 bg-gradient-to-br from-primary to-secondary rounded-2xl flex items-center justify-center animate-bounce-in shadow-lg shadow-primary/50 hover-scale">
+              <GraduationCap className="h-8 w-8 text-primary-foreground" />
+            </div>
           </div>
-          <CardTitle className="text-2xl">Online Exam System</CardTitle>
-          <CardDescription>
-            Secure exam paper delivery platform
+          <CardTitle className="text-3xl font-bold bg-gradient-to-r from-primary via-primary/80 to-secondary bg-clip-text text-transparent">
+            {isSignUp ? 'Create Account' : 'Welcome Back'}
+          </CardTitle>
+          <CardDescription className="animate-fade-in-up">
+            {isSignUp ? 'Join our secure exam platform' : 'Sign in to access your papers'}
           </CardDescription>
         </CardHeader>
-
+        
         <CardContent className="animate-fade-in-up" style={{ animationDelay: '200ms' }}>
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login" className="transition-all">Login</TabsTrigger>
-              <TabsTrigger value="signup" className="transition-all">Sign Up</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="login" className="animate-fade-in">
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div className="space-y-2 animate-fade-in-up" style={{ animationDelay: '100ms' }}>
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="Enter your email"
-                    value={loginForm.email}
-                    onChange={(e) => setLoginForm(prev => ({ ...prev, email: e.target.value }))}
-                    className="transition-all focus:scale-[1.02]"
-                    required
-                  />
-                </div>
-                <div className="space-y-2 animate-fade-in-up" style={{ animationDelay: '200ms' }}>
-                  <Label htmlFor="password">Password</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="Enter your password"
-                    value={loginForm.password}
-                    onChange={(e) => setLoginForm(prev => ({ ...prev, password: e.target.value }))}
-                    className="transition-all focus:scale-[1.02]"
-                    required
-                  />
-                </div>
-                <Button type="submit" className="w-full hover-scale hover-glow animate-fade-in-up" style={{ animationDelay: '300ms' }} disabled={loading}>
-                  {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Login
+          {!isSignUp ? (
+            <form onSubmit={handleLogin} className="space-y-5">
+              <div className="space-y-2 animate-fade-in" style={{ animationDelay: '300ms' }}>
+                <Label htmlFor="email" className="flex items-center gap-2">
+                  <Mail className="h-4 w-4 text-primary" />
+                  Email
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="your.email@example.com"
+                  value={loginForm.email}
+                  onChange={(e) => setLoginForm(prev => ({ ...prev, email: e.target.value }))}
+                  className="transition-all hover:border-primary focus:border-primary"
+                  required
+                />
+              </div>
+              <div className="space-y-2 animate-fade-in" style={{ animationDelay: '400ms' }}>
+                <Label htmlFor="password" className="flex items-center gap-2">
+                  <Lock className="h-4 w-4 text-primary" />
+                  Password
+                </Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={loginForm.password}
+                  onChange={(e) => setLoginForm(prev => ({ ...prev, password: e.target.value }))}
+                  className="transition-all hover:border-primary focus:border-primary"
+                  required
+                />
+              </div>
+              <Button
+                type="submit"
+                className="w-full hover-scale hover-glow animate-fade-in"
+                disabled={loading}
+                style={{ animationDelay: '500ms' }}
+              >
+                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Sign In
+              </Button>
+              <div className="text-center animate-fade-in" style={{ animationDelay: '600ms' }}>
+                <Button
+                  type="button"
+                  variant="link"
+                  onClick={() => setIsSignUp(true)}
+                  className="text-primary hover:text-primary/80"
+                >
+                  Don't have an account? Sign up
                 </Button>
-              </form>
-            </TabsContent>
-
-            <TabsContent value="signup" className="animate-fade-in">
-              <form onSubmit={handleSignup} className="space-y-4">
-                <div className="space-y-2 animate-fade-in-up" style={{ animationDelay: '100ms' }}>
-                  <Label htmlFor="fullName">Full Name</Label>
-                  <Input
-                    id="fullName"
-                    type="text"
-                    placeholder="Enter your full name"
-                    value={signupForm.fullName}
-                    onChange={(e) => setSignupForm(prev => ({ ...prev, fullName: e.target.value }))}
-                    className="transition-all focus:scale-[1.02]"
-                    required
-                  />
-                </div>
-                <div className="space-y-2 animate-fade-in-up" style={{ animationDelay: '150ms' }}>
-                  <Label htmlFor="signup-email">Email</Label>
-                  <Input
-                    id="signup-email"
-                    type="email"
-                    placeholder="Enter your email"
-                    value={signupForm.email}
-                    onChange={(e) => setSignupForm(prev => ({ ...prev, email: e.target.value }))}
-                    className="transition-all focus:scale-[1.02]"
-                    required
-                  />
-                </div>
-                <div className="space-y-2 animate-fade-in-up" style={{ animationDelay: '200ms' }}>
-                  <Label htmlFor="signup-password">Password</Label>
-                  <Input
-                    id="signup-password"
-                    type="password"
-                    placeholder="Enter your password"
-                    value={signupForm.password}
-                    onChange={(e) => setSignupForm(prev => ({ ...prev, password: e.target.value }))}
-                    className="transition-all focus:scale-[1.02]"
-                    required
-                  />
-                </div>
-                <div className="space-y-2 animate-fade-in-up" style={{ animationDelay: '250ms' }}>
-                  <Label htmlFor="role">Role</Label>
-                  <Select
-                    value={signupForm.role}
-                    onValueChange={(value: 'chairperson' | 'college_admin') => 
-                      setSignupForm(prev => ({ ...prev, role: value }))
-                    }
-                  >
-                    <SelectTrigger className="transition-all">
-                      <SelectValue placeholder="Select your role" />
-                    </SelectTrigger>
-                    <SelectContent className="animate-scale-in bg-popover z-50">
-                      <SelectItem value="chairperson" className="cursor-pointer">Chairperson</SelectItem>
-                      <SelectItem value="college_admin" className="cursor-pointer">College Admin</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <Button type="submit" className="w-full hover-scale hover-glow animate-fade-in-up" style={{ animationDelay: '300ms' }} disabled={loading}>
-                  {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Sign Up
-                </Button>
-              </form>
-            </TabsContent>
-          </Tabs>
+              </div>
+            </form>
+          ) : (
+            <form onSubmit={handleSignup} className="space-y-5">
+              <div className="space-y-2 animate-fade-in" style={{ animationDelay: '300ms' }}>
+                <Label htmlFor="fullName" className="flex items-center gap-2">
+                  <User className="h-4 w-4 text-primary" />
+                  Full Name
+                </Label>
+                <Input
+                  id="fullName"
+                  type="text"
+                  placeholder="John Doe"
+                  value={signupForm.fullName}
+                  onChange={(e) => setSignupForm(prev => ({ ...prev, fullName: e.target.value }))}
+                  className="transition-all hover:border-primary focus:border-primary"
+                  required
+                />
+              </div>
+              <div className="space-y-2 animate-fade-in" style={{ animationDelay: '400ms' }}>
+                <Label htmlFor="signup-email" className="flex items-center gap-2">
+                  <Mail className="h-4 w-4 text-primary" />
+                  Email
+                </Label>
+                <Input
+                  id="signup-email"
+                  type="email"
+                  placeholder="your.email@example.com"
+                  value={signupForm.email}
+                  onChange={(e) => setSignupForm(prev => ({ ...prev, email: e.target.value }))}
+                  className="transition-all hover:border-primary focus:border-primary"
+                  required
+                />
+              </div>
+              <div className="space-y-2 animate-fade-in" style={{ animationDelay: '500ms' }}>
+                <Label htmlFor="signup-password" className="flex items-center gap-2">
+                  <Lock className="h-4 w-4 text-primary" />
+                  Password
+                </Label>
+                <Input
+                  id="signup-password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={signupForm.password}
+                  onChange={(e) => setSignupForm(prev => ({ ...prev, password: e.target.value }))}
+                  className="transition-all hover:border-primary focus:border-primary"
+                  required
+                  minLength={6}
+                />
+              </div>
+              <div className="space-y-2 animate-fade-in" style={{ animationDelay: '600ms' }}>
+                <Label htmlFor="role">Role</Label>
+                <Select
+                  value={signupForm.role}
+                  onValueChange={(value: 'chairperson' | 'college_admin') => 
+                    setSignupForm(prev => ({ ...prev, role: value }))
+                  }
+                >
+                  <SelectTrigger className="transition-all">
+                    <SelectValue placeholder="Select your role" />
+                  </SelectTrigger>
+                  <SelectContent className="animate-scale-in bg-popover z-50">
+                    <SelectItem value="chairperson" className="cursor-pointer">Chairperson</SelectItem>
+                    <SelectItem value="college_admin" className="cursor-pointer">College Admin</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button
+                type="submit"
+                className="w-full hover-scale hover-glow animate-fade-in"
+                disabled={loading}
+                style={{ animationDelay: '700ms' }}
+              >
+                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Create Account
+              </Button>
+            </form>
+          )}
         </CardContent>
-
-        <CardFooter className="text-center animate-fade-in-up" style={{ animationDelay: '400ms' }}>
-          <p className="text-sm text-muted-foreground">
-            Secure authentication for exam management
-          </p>
-        </CardFooter>
       </Card>
     </div>
   );
