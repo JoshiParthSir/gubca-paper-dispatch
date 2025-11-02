@@ -15,7 +15,7 @@ interface Paper {
   title: string;
   subject: string;
   duration_minutes: number;
-  file_path: string;
+  google_drive_link: string;
   batch_id: string;
   created_at: string;
   batches: {
@@ -41,8 +41,8 @@ export default function Papers() {
     subject: '',
     duration_minutes: 180,
     batch_id: '',
+    google_drive_link: '',
   });
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   useEffect(() => {
     fetchPapers();
@@ -91,10 +91,10 @@ export default function Papers() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!selectedFile) {
+    if (!formData.google_drive_link) {
       toast({
         title: 'Error',
-        description: 'Please select a file to upload',
+        description: 'Please provide a Google Drive link',
         variant: 'destructive',
       });
       return;
@@ -103,37 +103,16 @@ export default function Papers() {
     setUploading(true);
 
     try {
-      // Upload file to storage
-      const fileExt = selectedFile.name.split('.').pop();
-      const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
-      const filePath = `${fileName}`;
-      
-      const { error: uploadError } = await supabase.storage
-        .from('papers')
-        .upload(filePath, selectedFile, {
-          cacheControl: '3600',
-          upsert: false
-        });
-
-      if (uploadError) throw uploadError;
-
-      // Insert paper record with storage path
       const { error: insertError } = await supabase
         .from('papers')
         .insert([{
           ...formData,
-          file_path: filePath,
-          file_size: selectedFile.size,
           uploaded_by: user!.id,
         }]);
 
-      if (insertError) {
-        // Clean up uploaded file if insert fails
-        await supabase.storage.from('papers').remove([filePath]);
-        throw insertError;
-      }
+      if (insertError) throw insertError;
 
-      toast({ title: 'Paper uploaded successfully' });
+      toast({ title: 'Paper added successfully' });
       setDialogOpen(false);
       resetForm();
       fetchPapers();
@@ -148,18 +127,10 @@ export default function Papers() {
     }
   };
 
-  const handleDelete = async (id: string, filePath: string) => {
+  const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this paper?')) return;
 
     try {
-      // Delete from storage first
-      const { error: storageError } = await supabase.storage
-        .from('papers')
-        .remove([filePath]);
-
-      if (storageError) throw storageError;
-
-      // Then delete from database
       const { error } = await supabase
         .from('papers')
         .delete()
@@ -183,8 +154,8 @@ export default function Papers() {
       subject: '',
       duration_minutes: 180,
       batch_id: '',
+      google_drive_link: '',
     });
-    setSelectedFile(null);
   };
 
   if (loading) {
@@ -202,12 +173,12 @@ export default function Papers() {
           <DialogTrigger asChild>
             <Button className="hover-scale hover-glow">
               <Plus className="mr-2 h-4 w-4" />
-              Upload Paper
+              Add Paper
             </Button>
           </DialogTrigger>
           <DialogContent className="animate-scale-in bg-popover z-50">
             <DialogHeader>
-              <DialogTitle>Upload New Paper</DialogTitle>
+              <DialogTitle>Add New Paper</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
@@ -257,17 +228,18 @@ export default function Papers() {
                 </Select>
               </div>
               <div>
-                <Label htmlFor="file">Paper File (PDF)</Label>
+                <Label htmlFor="google_drive_link">Google Drive Link</Label>
                 <Input
-                  id="file"
-                  type="file"
-                  accept=".pdf"
-                  onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                  id="google_drive_link"
+                  type="url"
+                  placeholder="https://drive.google.com/file/d/..."
+                  value={formData.google_drive_link}
+                  onChange={(e) => setFormData({ ...formData, google_drive_link: e.target.value })}
                   required
                 />
               </div>
               <Button type="submit" className="w-full hover-scale" disabled={uploading}>
-                {uploading ? 'Uploading...' : 'Upload Paper'}
+                {uploading ? 'Adding...' : 'Add Paper'}
               </Button>
             </form>
           </DialogContent>
@@ -290,7 +262,7 @@ export default function Papers() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => handleDelete(paper.id, paper.file_path)}
+                  onClick={() => handleDelete(paper.id)}
                   className="hover-scale hover:bg-destructive hover:text-destructive-foreground transition-colors"
                 >
                   <Trash2 className="h-4 w-4" />

@@ -17,7 +17,7 @@ interface AllocatedPaper {
     title: string;
     subject: string;
     duration_minutes: number;
-    file_path: string;
+    google_drive_link: string;
   };
 }
 
@@ -57,7 +57,7 @@ export default function MyPapers() {
       // Then get allocations with papers
       const { data, error } = await supabase
         .from('allocations')
-        .select('id, exam_date, start_time, end_time, papers(id, title, subject, duration_minutes, file_path)')
+        .select('id, exam_date, start_time, end_time, papers(id, title, subject, duration_minutes, google_drive_link)')
         .in('id', allocationIds)
         .eq('is_published', true)
         .order('exam_date', { ascending: true });
@@ -83,26 +83,9 @@ export default function MyPapers() {
     return now >= examDateTime && now <= endDateTime;
   };
 
-  const handleDownload = async (allocationId: string, paperId: string, title: string, filePath: string) => {
+  const handleOpenPaper = async (allocationId: string, googleDriveLink: string) => {
     try {
-      console.log('Starting download for:', { allocationId, paperId, title, filePath });
-
-      // Get signed URL from storage
-      const { data: urlData, error: urlError } = await supabase.storage
-        .from('papers')
-        .createSignedUrl(filePath, 3600); // URL valid for 1 hour
-
-      console.log('Signed URL response:', { urlData, urlError });
-
-      if (urlError) {
-        console.error('Storage error:', urlError);
-        throw urlError;
-      }
-      if (!urlData?.signedUrl) {
-        throw new Error('Failed to generate download URL');
-      }
-
-      // Log the download
+      // Log the access
       const { error: logError } = await supabase
         .from('download_logs')
         .insert([{
@@ -110,34 +93,16 @@ export default function MyPapers() {
           downloaded_by: user!.id,
         }]);
 
-      if (logError) console.error('Failed to log download:', logError);
+      if (logError) console.error('Failed to log access:', logError);
 
-      // Fetch and download the file
-      const response = await fetch(urlData.signedUrl);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch file: ${response.statusText}`);
-      }
-      
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${title}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-
-      toast({
-        title: 'Download Started',
-        description: `Downloading ${title}`,
-      });
+      // Open Google Drive link in new tab
+      window.open(googleDriveLink, '_blank');
       
     } catch (error: any) {
-      console.error('Download error:', error);
+      console.error('Access error:', error);
       toast({
-        title: 'Download Error',
-        description: error.message || 'Failed to download the file',
+        title: 'Error',
+        description: 'Failed to access the paper',
         variant: 'destructive',
       });
     }
@@ -187,17 +152,15 @@ export default function MyPapers() {
                     {downloadable ? (
                       <Button
                         onClick={() =>
-                          handleDownload(
+                          handleOpenPaper(
                             allocation.id,
-                            allocation.papers.id,
-                            allocation.papers.title,
-                            allocation.papers.file_path
+                            allocation.papers.google_drive_link
                           )
                         }
                         className="hover-scale hover-glow"
                       >
                         <Download className="mr-2 h-4 w-4" />
-                        Download
+                        Open Paper
                       </Button>
                     ) : (
                       <Badge variant="secondary" className="animate-pulse">
