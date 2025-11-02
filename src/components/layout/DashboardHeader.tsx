@@ -54,10 +54,10 @@ export function DashboardHeader() {
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56 animate-scale-in bg-popover z-50" align="end" forceMount>
-              <DropdownMenuLabel className="font-normal">
+            <DropdownMenuContent className="w-56 animate-scale-in bg-popover text-popover-foreground border border-border shadow-lg z-50" align="end" forceMount>
+              <DropdownMenuLabel className="font-normal text-popover-foreground">
                 <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none">{profile?.full_name}</p>
+                  <p className="text-sm font-medium leading-none text-popover-foreground">{profile?.full_name}</p>
                   <p className="text-xs leading-none text-muted-foreground">
                     {profile?.email}
                   </p>
@@ -67,12 +67,12 @@ export function DashboardHeader() {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="cursor-pointer transition-colors hover:bg-accent">
+              <DropdownMenuItem className="cursor-pointer transition-colors hover:bg-accent hover:text-accent-foreground text-popover-foreground">
                 <User className="mr-2 h-4 w-4" />
                 <span>Profile</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer transition-colors hover:bg-destructive hover:text-destructive-foreground">
+              <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer transition-colors hover:bg-destructive hover:text-destructive-foreground text-popover-foreground">
                 <LogOut className="mr-2 h-4 w-4" />
                 <span>Log out</span>
               </DropdownMenuItem>
