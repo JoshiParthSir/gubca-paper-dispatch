@@ -176,7 +176,7 @@ export type Database = {
           download_time: string | null
           downloaded_by: string
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           user_agent: string | null
         }
         Insert: {
@@ -184,7 +184,7 @@ export type Database = {
           download_time?: string | null
           downloaded_by: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           user_agent?: string | null
         }
         Update: {
@@ -192,7 +192,7 @@ export type Database = {
           download_time?: string | null
           downloaded_by?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           user_agent?: string | null
         }
         Relationships: [
@@ -210,8 +210,7 @@ export type Database = {
           batch_id: string
           created_at: string | null
           duration_minutes: number
-          file_path: string
-          file_size: number | null
+          google_drive_link: string
           id: string
           subject: string
           title: string
@@ -222,8 +221,7 @@ export type Database = {
           batch_id: string
           created_at?: string | null
           duration_minutes: number
-          file_path: string
-          file_size?: number | null
+          google_drive_link?: string
           id?: string
           subject: string
           title: string
@@ -234,8 +232,7 @@ export type Database = {
           batch_id?: string
           created_at?: string | null
           duration_minutes?: number
-          file_path?: string
-          file_size?: number | null
+          google_drive_link?: string
           id?: string
           subject?: string
           title?: string
