@@ -12,6 +12,15 @@ serve(async (req) => {
   }
 
   try {
+    // Verify the caller is authenticated
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'Authentication required' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
@@ -22,6 +31,38 @@ serve(async (req) => {
         }
       }
     )
+
+    // Create a client with the user's token to verify their role
+    const token = authHeader.replace('Bearer ', '')
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      {
+        global: {
+          headers: { Authorization: authHeader }
+        }
+      }
+    )
+
+    // Verify the user's identity
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token)
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid authentication token' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Check if user is a chairperson using the secure function
+    const { data: hasRole, error: roleError } = await supabaseAdmin
+      .rpc('has_role', { _user_id: user.id, _role: 'chairperson' })
+
+    if (roleError || !hasRole) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized: Chairperson access required' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
 
     const { email, password, full_name, college_id } = await req.json()
 
@@ -53,6 +94,13 @@ serve(async (req) => {
       .eq('user_id', userData.user.id)
 
     if (profileError) throw profileError
+
+    // Add role to user_roles table
+    const { error: roleInsertError } = await supabaseAdmin
+      .from('user_roles')
+      .insert({ user_id: userData.user.id, role: 'college_admin' })
+
+    if (roleInsertError) throw roleInsertError
 
     return new Response(
       JSON.stringify({ success: true, user_id: userData.user.id }),

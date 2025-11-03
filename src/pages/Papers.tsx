@@ -100,6 +100,17 @@ export default function Papers() {
       return;
     }
 
+    // Validate URL is from Google Drive
+    const urlPattern = /^https:\/\/drive\.google\.com\/(file\/d\/|drive\/folders\/|open\?id=)/;
+    if (!urlPattern.test(formData.google_drive_link)) {
+      toast({
+        title: 'Error',
+        description: 'Please provide a valid Google Drive link',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setUploading(true);
 
     try {

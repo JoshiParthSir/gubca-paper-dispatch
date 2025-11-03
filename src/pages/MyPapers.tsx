@@ -85,6 +85,17 @@ export default function MyPapers() {
 
   const handleOpenPaper = async (allocationId: string, googleDriveLink: string) => {
     try {
+      // Validate the URL before opening
+      const urlPattern = /^https:\/\/drive\.google\.com\/(file\/d\/|drive\/folders\/|open\?id=)/;
+      if (!urlPattern.test(googleDriveLink)) {
+        toast({
+          title: 'Error',
+          description: 'Invalid paper link',
+          variant: 'destructive',
+        });
+        return;
+      }
+
       // Log the access
       const { error: logError } = await supabase
         .from('download_logs')
