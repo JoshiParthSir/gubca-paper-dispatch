@@ -55,7 +55,7 @@ serve(async (req) => {
 
     // Check if user is a chairperson using the secure function
     const { data: hasRole, error: roleError } = await supabaseAdmin
-      .rpc('has_role', { _user_id: user.id, _role: 'chairperson' })
+      .rpc('check_user_role', { _user_id: user.id, _role: 'chairperson' })
 
     if (roleError || !hasRole) {
       return new Response(
@@ -74,13 +74,34 @@ serve(async (req) => {
       )
     }
 
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid email format' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Validate password strength (minimum 8 characters)
+    if (password.length < 8) {
+      return new Response(
+        JSON.stringify({ error: 'Password must be at least 8 characters' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Sanitize inputs (prevent XSS)
+    const sanitizedFullName = full_name.trim().substring(0, 100)
+    const sanitizedEmail = email.trim().toLowerCase().substring(0, 255)
+
     // Create user using admin API
     const { data: userData, error: userError } = await supabaseAdmin.auth.admin.createUser({
-      email,
+      email: sanitizedEmail,
       password,
       email_confirm: true,
       user_metadata: {
-        full_name,
+        full_name: sanitizedFullName,
         role: 'college_admin'
       }
     })

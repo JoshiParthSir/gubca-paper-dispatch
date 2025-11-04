@@ -100,12 +100,46 @@ export default function Papers() {
       return;
     }
 
+    // Validate and sanitize URL
+    let sanitizedUrl = formData.google_drive_link.trim();
+    
     // Validate URL is from Google Drive
     const urlPattern = /^https:\/\/drive\.google\.com\/(file\/d\/|drive\/folders\/|open\?id=)/;
-    if (!urlPattern.test(formData.google_drive_link)) {
+    if (!urlPattern.test(sanitizedUrl)) {
       toast({
         title: 'Error',
         description: 'Please provide a valid Google Drive link',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Additional XSS protection: Remove any potential script injection
+    try {
+      const url = new URL(sanitizedUrl);
+      if (url.protocol !== 'https:' || url.hostname !== 'drive.google.com') {
+        toast({
+          title: 'Error',
+          description: 'Only HTTPS Google Drive links are allowed',
+          variant: 'destructive',
+        });
+        return;
+      }
+      sanitizedUrl = url.toString();
+    } catch {
+      toast({
+        title: 'Error',
+        description: 'Invalid URL format',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Validate other fields
+    if (!formData.title.trim() || !formData.subject.trim()) {
+      toast({
+        title: 'Error',
+        description: 'Title and subject are required',
         variant: 'destructive',
       });
       return;
@@ -117,7 +151,11 @@ export default function Papers() {
       const { error: insertError } = await supabase
         .from('papers')
         .insert([{
-          ...formData,
+          title: formData.title.trim().substring(0, 200),
+          subject: formData.subject.trim().substring(0, 100),
+          duration_minutes: formData.duration_minutes,
+          batch_id: formData.batch_id,
+          google_drive_link: sanitizedUrl,
           uploaded_by: user!.id,
         }]);
 
