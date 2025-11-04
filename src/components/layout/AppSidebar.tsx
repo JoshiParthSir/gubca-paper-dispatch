@@ -45,10 +45,6 @@ export function AppSidebar() {
   const currentPath = location.pathname;
 
   const items = profile?.role === 'chairperson' ? chairpersonItems : collegeAdminItems;
-  const isActive = (path: string) => currentPath === path;
-  const isExpanded = items.some((i) => isActive(i.url));
-  const getNavCls = ({ isActive }: { isActive: boolean }) =>
-    isActive ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium' : 'hover:bg-sidebar-accent/50';
   
   const handleNavClick = () => {
     // Collapse sidebar on mobile after navigation
@@ -90,8 +86,17 @@ export function AppSidebar() {
                   style={{ animationDelay: `${index * 50}ms` }}
                 >
                   <SidebarMenuButton asChild>
-                    <NavLink to={item.url} end className={getNavCls} onClick={handleNavClick}>
-                      <item.icon className="mr-2 h-4 w-4 transition-transform hover:scale-110" />
+                    <NavLink 
+                      to={item.url} 
+                      end 
+                      className={({ isActive }) =>
+                        isActive 
+                          ? 'flex items-center gap-2 rounded-md px-3 py-2 bg-sidebar-accent text-sidebar-accent-foreground font-medium' 
+                          : 'flex items-center gap-2 rounded-md px-3 py-2 hover:bg-sidebar-accent/50 transition-colors'
+                      }
+                      onClick={handleNavClick}
+                    >
+                      <item.icon className="h-4 w-4 transition-transform hover:scale-110" />
                       {open && <span>{item.title}</span>}
                     </NavLink>
                   </SidebarMenuButton>
@@ -108,8 +113,16 @@ export function AppSidebar() {
               <SidebarMenu>
                 <SidebarMenuItem className="animate-fade-in-up" style={{ animationDelay: '400ms' }}>
                   <SidebarMenuButton asChild>
-                    <NavLink to="/dashboard/settings" className={getNavCls} onClick={handleNavClick}>
-                      <Settings className="mr-2 h-4 w-4 transition-transform hover:rotate-90 hover:scale-110" />
+                    <NavLink 
+                      to="/dashboard/settings" 
+                      className={({ isActive }) =>
+                        isActive 
+                          ? 'flex items-center gap-2 rounded-md px-3 py-2 bg-sidebar-accent text-sidebar-accent-foreground font-medium' 
+                          : 'flex items-center gap-2 rounded-md px-3 py-2 hover:bg-sidebar-accent/50 transition-colors'
+                      }
+                      onClick={handleNavClick}
+                    >
+                      <Settings className="h-4 w-4 transition-transform hover:rotate-90 hover:scale-110" />
                       {open && <span>Settings</span>}
                     </NavLink>
                   </SidebarMenuButton>

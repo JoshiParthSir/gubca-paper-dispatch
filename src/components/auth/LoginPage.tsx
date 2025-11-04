@@ -70,6 +70,20 @@ export default function LoginPage() {
     }
   };
 
+  // Show loading spinner while checking auth
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // Don't render login form if user is authenticated
+  if (user && profile) {
+    return null;
+  }
+
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/20 via-background to-secondary/20 p-4 animate-fade-in relative overflow-hidden">

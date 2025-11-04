@@ -54,7 +54,7 @@ export function DashboardHeader() {
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56 animate-scale-in bg-popover text-popover-foreground border border-border shadow-lg z-50" align="end" forceMount>
+            <DropdownMenuContent className="w-56 animate-scale-in bg-popover/95 backdrop-blur-sm text-popover-foreground border border-border shadow-xl z-[100]" align="end" forceMount>
               <DropdownMenuLabel className="font-normal text-popover-foreground">
                 <div className="flex flex-col space-y-1">
                   <p className="text-sm font-medium leading-none text-popover-foreground">{profile?.full_name}</p>
