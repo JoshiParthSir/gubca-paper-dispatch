@@ -65,18 +65,11 @@ export function AppSidebar() {
         {/* App Logo and Toggle */}
         <div className="p-4 border-b border-sidebar-border animate-fade-in">
           <div className="flex items-center gap-2">
-            {!open ? (
-              <button 
-                onClick={toggleSidebar}
-                className="w-8 h-8 bg-sidebar-primary rounded-lg flex items-center justify-center hover-scale transition-all"
-              >
-                <GraduationCap className="h-4 w-4 text-sidebar-primary-foreground" />
-              </button>
-            ) : (
+            <div className="w-8 h-8 bg-sidebar-primary rounded-lg flex items-center justify-center animate-bounce-in hover-scale transition-all cursor-pointer" onClick={toggleSidebar}>
+              <GraduationCap className="h-4 w-4 text-sidebar-primary-foreground" />
+            </div>
+            {open && (
               <>
-                <div className="w-8 h-8 bg-sidebar-primary rounded-lg flex items-center justify-center animate-bounce-in hover-scale transition-all">
-                  <GraduationCap className="h-4 w-4 text-sidebar-primary-foreground" />
-                </div>
                 <div className="animate-fade-in-left flex-1">
                   <h1 className="font-semibold text-sidebar-foreground">Exam System</h1>
                   <p className="text-xs text-sidebar-foreground/70">
@@ -85,9 +78,10 @@ export function AppSidebar() {
                 </div>
                 <button 
                   onClick={toggleSidebar}
-                  className="p-2 hover:bg-sidebar-accent rounded-md transition-colors"
+                  className="p-2 hover:bg-sidebar-accent rounded-md transition-colors text-lg font-bold"
+                  title="Collapse sidebar"
                 >
-                  <span className="text-sidebar-foreground">‹</span>
+                  ‹
                 </button>
               </>
             )}
