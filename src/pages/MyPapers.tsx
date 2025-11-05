@@ -171,7 +171,7 @@ export default function MyPapers() {
                         className="hover-scale hover-glow"
                       >
                         <Download className="mr-2 h-4 w-4" />
-                        Open Paper
+                        Download
                       </Button>
                     ) : (
                       <Badge variant="secondary" className="animate-pulse">

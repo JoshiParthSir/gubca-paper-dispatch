@@ -41,18 +41,79 @@ export default function DownloadLogs() {
       const { data, error } = await supabase
         .from('download_logs')
         .select(`
-          *,
-          profiles!download_logs_downloaded_by_fkey(full_name, email),
-          allocations(
-            exam_date,
-            papers(title, subject),
-            colleges(name, code)
-          )
+          id,
+          download_time,
+          ip_address,
+          user_agent,
+          downloaded_by,
+          allocation_id
         `)
         .order('download_time', { ascending: false });
 
       if (error) throw error;
-      setLogs((data as any) || []);
+
+      // Manually fetch related data for each log
+      const enrichedLogs = await Promise.all(
+        (data || []).map(async (log) => {
+          // Fetch profile
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('full_name, email')
+            .eq('user_id', log.downloaded_by)
+            .single();
+
+          // Fetch allocation with paper and college
+          const { data: allocationData } = await supabase
+            .from('allocations')
+            .select('exam_date, paper_id')
+            .eq('id', log.allocation_id)
+            .single();
+
+          let paperData = null;
+          let collegeData = null;
+
+          if (allocationData) {
+            // Fetch paper
+            const { data: paper } = await supabase
+              .from('papers')
+              .select('title, subject')
+              .eq('id', allocationData.paper_id)
+              .single();
+            paperData = paper;
+
+            // Fetch college through allocation_colleges
+            const { data: allocationCollege } = await supabase
+              .from('allocation_colleges')
+              .select('college_id')
+              .eq('allocation_id', log.allocation_id)
+              .single();
+
+            if (allocationCollege) {
+              const { data: college } = await supabase
+                .from('colleges')
+                .select('name, code')
+                .eq('id', allocationCollege.college_id)
+                .single();
+              collegeData = college;
+            }
+          }
+
+          return {
+            id: log.id,
+            download_time: log.download_time,
+            ip_address: log.ip_address as string | null,
+            user_agent: log.user_agent as string | null,
+            profiles: profileData || { full_name: 'Unknown', email: 'N/A' },
+            allocations: {
+              exam_date: allocationData?.exam_date || 'N/A',
+              papers: paperData || { title: 'Unknown', subject: 'N/A' },
+              colleges: collegeData || { name: 'Unknown', code: 'N/A' },
+            },
+          };
+        })
+      );
+
+      setLogs(enrichedLogs as DownloadLog[]);
     } catch (error: any) {
       toast({
         title: 'Error',
