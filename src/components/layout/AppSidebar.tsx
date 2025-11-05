@@ -42,7 +42,6 @@ export function AppSidebar() {
   const { open, setOpen } = useSidebar();
   const { profile } = useAuth();
   const location = useLocation();
-  const currentPath = location.pathname;
 
   const items = profile?.role === 'chairperson' ? chairpersonItems : collegeAdminItems;
   
@@ -53,26 +52,45 @@ export function AppSidebar() {
     }
   };
 
+  const toggleSidebar = () => {
+    setOpen(!open);
+  };
+
   return (
     <Sidebar
       className={open ? 'w-60' : 'w-14'}
+      collapsible="icon"
     >
       <SidebarContent>
-        {/* App Logo */}
+        {/* App Logo and Toggle */}
         <div className="p-4 border-b border-sidebar-border animate-fade-in">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-sidebar-primary rounded-lg flex items-center justify-center animate-bounce-in hover-scale transition-all">
-              <GraduationCap className="h-4 w-4 text-sidebar-primary-foreground" />
-            </div>
-            {open && (
-              <div className="animate-fade-in-left flex-1">
-                <h1 className="font-semibold text-sidebar-foreground">Exam System</h1>
-                <p className="text-xs text-sidebar-foreground/70">
-                  {profile?.role === 'chairperson' ? 'Chairperson' : 'College Admin'}
-                </p>
-              </div>
+            {!open ? (
+              <button 
+                onClick={toggleSidebar}
+                className="w-8 h-8 bg-sidebar-primary rounded-lg flex items-center justify-center hover-scale transition-all"
+              >
+                <GraduationCap className="h-4 w-4 text-sidebar-primary-foreground" />
+              </button>
+            ) : (
+              <>
+                <div className="w-8 h-8 bg-sidebar-primary rounded-lg flex items-center justify-center animate-bounce-in hover-scale transition-all">
+                  <GraduationCap className="h-4 w-4 text-sidebar-primary-foreground" />
+                </div>
+                <div className="animate-fade-in-left flex-1">
+                  <h1 className="font-semibold text-sidebar-foreground">Exam System</h1>
+                  <p className="text-xs text-sidebar-foreground/70">
+                    {profile?.role === 'chairperson' ? 'Chairperson' : 'College Admin'}
+                  </p>
+                </div>
+                <button 
+                  onClick={toggleSidebar}
+                  className="p-2 hover:bg-sidebar-accent rounded-md transition-colors"
+                >
+                  <span className="text-sidebar-foreground">‹</span>
+                </button>
+              </>
             )}
-            <SidebarTrigger className="ml-auto" />
           </div>
         </div>
 
