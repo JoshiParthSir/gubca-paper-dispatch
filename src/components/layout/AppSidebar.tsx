@@ -85,21 +85,21 @@ export function AppSidebar() {
                   className="animate-fade-in-up"
                   style={{ animationDelay: `${index * 50}ms` }}
                 >
-                  <SidebarMenuButton asChild>
-                    <NavLink 
-                      to={item.url} 
-                      end 
-                      className={({ isActive }) =>
+                  <NavLink 
+                    to={item.url} 
+                    end 
+                    className={({ isActive }) =>
+                      `flex items-center gap-2 rounded-md px-3 py-2 transition-colors ${
                         isActive 
-                          ? 'flex items-center gap-2 rounded-md px-3 py-2 bg-sidebar-accent text-sidebar-accent-foreground font-medium' 
-                          : 'flex items-center gap-2 rounded-md px-3 py-2 hover:bg-sidebar-accent/50 transition-colors'
-                      }
-                      onClick={handleNavClick}
-                    >
-                      <item.icon className="h-4 w-4 transition-transform hover:scale-110" />
-                      {open && <span>{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
+                          ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium' 
+                          : 'hover:bg-sidebar-accent/50'
+                      }`
+                    }
+                    onClick={handleNavClick}
+                  >
+                    <item.icon className="h-4 w-4 transition-transform hover:scale-110" />
+                    {open && <span>{item.title}</span>}
+                  </NavLink>
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>
@@ -112,20 +112,20 @@ export function AppSidebar() {
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem className="animate-fade-in-up" style={{ animationDelay: '400ms' }}>
-                  <SidebarMenuButton asChild>
-                    <NavLink 
-                      to="/dashboard/settings" 
-                      className={({ isActive }) =>
+                  <NavLink 
+                    to="/dashboard/settings" 
+                    className={({ isActive }) =>
+                      `flex items-center gap-2 rounded-md px-3 py-2 transition-colors ${
                         isActive 
-                          ? 'flex items-center gap-2 rounded-md px-3 py-2 bg-sidebar-accent text-sidebar-accent-foreground font-medium' 
-                          : 'flex items-center gap-2 rounded-md px-3 py-2 hover:bg-sidebar-accent/50 transition-colors'
-                      }
-                      onClick={handleNavClick}
-                    >
-                      <Settings className="h-4 w-4 transition-transform hover:rotate-90 hover:scale-110" />
-                      {open && <span>Settings</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
+                          ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium' 
+                          : 'hover:bg-sidebar-accent/50'
+                      }`
+                    }
+                    onClick={handleNavClick}
+                  >
+                    <Settings className="h-4 w-4 transition-transform hover:rotate-90 hover:scale-110" />
+                    {open && <span>Settings</span>}
+                  </NavLink>
                 </SidebarMenuItem>
               </SidebarMenu>
             </SidebarGroupContent>

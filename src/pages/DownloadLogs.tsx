@@ -83,39 +83,45 @@ export default function DownloadLogs() {
             </CardContent>
           </Card>
         ) : (
-          logs.map((log) => (
-            <Card key={log.id}>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Download className="h-5 w-5 text-primary" />
-                    <span>{log.allocations.papers.title}</span>
+          logs.map((log) => {
+            if (!log.allocations || !log.allocations.papers || !log.allocations.colleges || !log.profiles) {
+              return null;
+            }
+            
+            return (
+              <Card key={log.id}>
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Download className="h-5 w-5 text-primary" />
+                      <span>{log.allocations.papers.title}</span>
+                    </div>
+                    <Badge variant="secondary">{log.allocations.papers.subject}</Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid gap-3 text-sm">
+                    <div className="flex items-center gap-2">
+                      <User className="h-4 w-4 text-muted-foreground" />
+                      <span className="font-medium">{log.profiles.full_name}</span>
+                      <span className="text-muted-foreground">({log.profiles.email})</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <span>College: {log.allocations.colleges.name} ({log.allocations.colleges.code})</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      <span>Downloaded: {new Date(log.download_time).toLocaleString()}</span>
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      IP: {log.ip_address || 'N/A'}
+                    </div>
                   </div>
-                  <Badge variant="secondary">{log.allocations.papers.subject}</Badge>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid gap-3 text-sm">
-                  <div className="flex items-center gap-2">
-                    <User className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium">{log.profiles.full_name}</span>
-                    <span className="text-muted-foreground">({log.profiles.email})</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span>College: {log.allocations.colleges.name} ({log.allocations.colleges.code})</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-muted-foreground" />
-                    <span>Downloaded: {new Date(log.download_time).toLocaleString()}</span>
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    IP: {log.ip_address || 'N/A'}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))
+                </CardContent>
+              </Card>
+            );
+          })
         )}
       </div>
     </div>
