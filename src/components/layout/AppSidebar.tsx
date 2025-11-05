@@ -65,13 +65,14 @@ export function AppSidebar() {
               <GraduationCap className="h-4 w-4 text-sidebar-primary-foreground" />
             </div>
             {open && (
-              <div className="animate-fade-in-left">
+              <div className="animate-fade-in-left flex-1">
                 <h1 className="font-semibold text-sidebar-foreground">Exam System</h1>
                 <p className="text-xs text-sidebar-foreground/70">
                   {profile?.role === 'chairperson' ? 'Chairperson' : 'College Admin'}
                 </p>
               </div>
             )}
+            <SidebarTrigger className="ml-auto" />
           </div>
         </div>
 
