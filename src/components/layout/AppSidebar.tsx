@@ -39,52 +39,29 @@ const collegeAdminItems = [
 ];
 
 export function AppSidebar() {
-  const { open, setOpen } = useSidebar();
   const { profile } = useAuth();
   const location = useLocation();
 
   const items = profile?.role === 'chairperson' ? chairpersonItems : collegeAdminItems;
-  
-  const handleNavClick = () => {
-    // Collapse sidebar on mobile after navigation
-    if (window.innerWidth < 768) {
-      setOpen(false);
-    }
-  };
-
-  const toggleSidebar = () => {
-    setOpen(!open);
-  };
 
   return (
     <Sidebar
-      className={open ? 'w-60' : 'w-14'}
-      collapsible="icon"
+      className="w-60"
+      collapsible="none"
     >
       <SidebarContent>
-        {/* App Logo and Toggle */}
+        {/* App Logo and Header */}
         <div className="p-4 border-b border-sidebar-border animate-fade-in">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-sidebar-primary rounded-lg flex items-center justify-center animate-bounce-in hover-scale transition-all cursor-pointer" onClick={toggleSidebar}>
+            <div className="w-8 h-8 bg-sidebar-primary rounded-lg flex items-center justify-center animate-bounce-in hover-scale transition-all">
               <GraduationCap className="h-4 w-4 text-sidebar-primary-foreground" />
             </div>
-            {open && (
-              <>
-                <div className="animate-fade-in-left flex-1">
-                  <h1 className="font-semibold text-sidebar-foreground">Exam System</h1>
-                  <p className="text-xs text-sidebar-foreground/70">
-                    {profile?.role === 'chairperson' ? 'Chairperson' : 'College Admin'}
-                  </p>
-                </div>
-                <button 
-                  onClick={toggleSidebar}
-                  className="p-2 hover:bg-sidebar-accent rounded-md transition-colors text-lg font-bold"
-                  title="Collapse sidebar"
-                >
-                  ‹
-                </button>
-              </>
-            )}
+            <div className="animate-fade-in-left flex-1">
+              <h1 className="font-semibold text-sidebar-foreground">Exam System</h1>
+              <p className="text-xs text-sidebar-foreground/70">
+                {profile?.role === 'chairperson' ? 'Chairperson' : 'College Admin'}
+              </p>
+            </div>
           </div>
         </div>
 
@@ -108,10 +85,9 @@ export function AppSidebar() {
                           : 'hover:bg-sidebar-accent/50'
                       }`
                     }
-                    onClick={handleNavClick}
                   >
                     <item.icon className="h-4 w-4 transition-transform hover:scale-110" />
-                    {open && <span>{item.title}</span>}
+                    <span>{item.title}</span>
                   </NavLink>
                 </SidebarMenuItem>
               ))}
@@ -134,10 +110,9 @@ export function AppSidebar() {
                           : 'hover:bg-sidebar-accent/50'
                       }`
                     }
-                    onClick={handleNavClick}
                   >
                     <Settings className="h-4 w-4 transition-transform hover:rotate-90 hover:scale-110" />
-                    {open && <span>Settings</span>}
+                    <span>Settings</span>
                   </NavLink>
                 </SidebarMenuItem>
               </SidebarMenu>
