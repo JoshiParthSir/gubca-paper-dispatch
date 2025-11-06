@@ -1,4 +1,4 @@
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import {
   Sidebar,
@@ -7,10 +7,7 @@ import {
   SidebarGroupContent,
   SidebarGroupLabel,
   SidebarMenu,
-  SidebarMenuButton,
   SidebarMenuItem,
-  SidebarTrigger,
-  useSidebar,
 } from '@/components/ui/sidebar';
 import {
   GraduationCap,
@@ -40,7 +37,6 @@ const collegeAdminItems = [
 
 export function AppSidebar() {
   const { profile } = useAuth();
-  const location = useLocation();
 
   const items = profile?.role === 'chairperson' ? chairpersonItems : collegeAdminItems;
 
