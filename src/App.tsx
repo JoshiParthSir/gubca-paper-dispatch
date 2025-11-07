@@ -9,6 +9,7 @@ import NotFound from "./pages/NotFound";
 import LoginPage from "./components/auth/LoginPage";
 import Dashboard from "./pages/Dashboard";
 import Colleges from "./pages/Colleges";
+import CollegeAdmins from "./pages/CollegeAdmins";
 import Batches from "./pages/Batches";
 import Papers from "./pages/Papers";
 import Allocations from "./pages/Allocations";
@@ -36,6 +37,11 @@ const App = () => (
             <Route path="/dashboard/colleges" element={
               <DashboardLayout>
                 <Colleges />
+              </DashboardLayout>
+            } />
+            <Route path="/dashboard/college-admins" element={
+              <DashboardLayout>
+                <CollegeAdmins />
               </DashboardLayout>
             } />
             <Route path="/dashboard/batches" element={

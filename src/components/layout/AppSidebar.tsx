@@ -19,11 +19,13 @@ import {
   Download,
   BarChart3,
   Settings,
+  UserCog,
 } from 'lucide-react';
 
 const chairpersonItems = [
   { title: 'Dashboard', url: '/dashboard', icon: BarChart3 },
   { title: 'Colleges', url: '/dashboard/colleges', icon: Building2 },
+  { title: 'College Admins', url: '/dashboard/college-admins', icon: UserCog },
   { title: 'Batches', url: '/dashboard/batches', icon: Users },
   { title: 'Papers', url: '/dashboard/papers', icon: FileText },
   { title: 'Allocations', url: '/dashboard/allocations', icon: Calendar },
