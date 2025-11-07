@@ -109,19 +109,13 @@ serve(async (req) => {
     if (userError) throw userError
 
     // Update the profile with college_id
+    // Note: The role is already inserted by the handle_new_user() trigger
     const { error: profileError } = await supabaseAdmin
       .from('profiles')
       .update({ college_id })
       .eq('user_id', userData.user.id)
 
     if (profileError) throw profileError
-
-    // Add role to user_roles table
-    const { error: roleInsertError } = await supabaseAdmin
-      .from('user_roles')
-      .insert({ user_id: userData.user.id, role: 'college_admin' })
-
-    if (roleInsertError) throw roleInsertError
 
     return new Response(
       JSON.stringify({ success: true, user_id: userData.user.id }),
