@@ -17,9 +17,6 @@ const collegeSchema = z.object({
   address: z.string().trim().optional(),
   contact_email: z.string().trim().email('Invalid email').optional().or(z.literal('')),
   contact_phone: z.string().trim().optional(),
-  admin_full_name: z.string().trim().min(2, 'Admin name must be at least 2 characters'),
-  admin_email: z.string().trim().email('Invalid admin email'),
-  admin_password: z.string().min(6, 'Password must be at least 6 characters'),
 });
 
 interface College {
@@ -45,9 +42,6 @@ export default function Colleges() {
     address: '',
     contact_email: '',
     contact_phone: '',
-    admin_full_name: '',
-    admin_email: '',
-    admin_password: '',
   });
 
   useEffect(() => {
@@ -79,7 +73,7 @@ export default function Colleges() {
     
     try {
       if (editingCollege) {
-        // When editing, only update college details (not admin)
+        // When editing, only update college details
         const { error } = await supabase
           .from('colleges')
           .update({
@@ -97,8 +91,8 @@ export default function Colleges() {
         // Validate form data
         const validatedData = collegeSchema.parse(formData);
 
-        // First create the college
-        const { data: collegeData, error: collegeError } = await supabase
+        // Create the college
+        const { error: collegeError } = await supabase
           .from('colleges')
           .insert([{
             name: validatedData.name,
@@ -107,31 +101,13 @@ export default function Colleges() {
             contact_email: validatedData.contact_email || null,
             contact_phone: validatedData.contact_phone || null,
             created_by: user!.id
-          }])
-          .select()
-          .single();
+          }]);
 
         if (collegeError) throw collegeError;
 
-        // Then create the college admin
-        const { data: functionData, error: functionError } = await supabase.functions.invoke(
-          'create-college-admin',
-          {
-            body: {
-              email: validatedData.admin_email,
-              password: validatedData.admin_password,
-              full_name: validatedData.admin_full_name,
-              college_id: collegeData.id,
-            },
-          }
-        );
-
-        if (functionError) throw functionError;
-        if (functionData?.error) throw new Error(functionData.error);
-
         toast({ 
           title: 'Success',
-          description: 'College and admin account created successfully'
+          description: 'College created successfully'
         });
       }
 
@@ -183,9 +159,6 @@ export default function Colleges() {
       address: '',
       contact_email: '',
       contact_phone: '',
-      admin_full_name: '',
-      admin_email: '',
-      admin_password: '',
     });
     setEditingCollege(null);
   };
@@ -198,9 +171,6 @@ export default function Colleges() {
       address: college.address || '',
       contact_email: college.contact_email || '',
       contact_phone: college.contact_phone || '',
-      admin_full_name: '',
-      admin_email: '',
-      admin_password: '',
     });
     setDialogOpen(true);
   };
@@ -230,11 +200,7 @@ export default function Colleges() {
               </DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* College Information Section */}
               <div className="space-y-4">
-                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-                  College Information
-                </h3>
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="name">College Name *</Label>
@@ -290,55 +256,6 @@ export default function Colleges() {
                 </div>
               </div>
 
-              {/* Admin Details Section - Only for new colleges */}
-              {!editingCollege && (
-                <div className="space-y-4 pt-4 border-t">
-                  <div>
-                    <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-                      College Admin Account
-                    </h3>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Create login credentials for the college administrator
-                    </p>
-                  </div>
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="space-y-2 md:col-span-2">
-                      <Label htmlFor="admin_full_name">Admin Full Name *</Label>
-                      <Input
-                        id="admin_full_name"
-                        placeholder="Enter admin full name"
-                        value={formData.admin_full_name}
-                        onChange={(e) => setFormData({ ...formData, admin_full_name: e.target.value })}
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="admin_email">Admin Email *</Label>
-                      <Input
-                        id="admin_email"
-                        type="email"
-                        placeholder="admin@example.com"
-                        value={formData.admin_email}
-                        onChange={(e) => setFormData({ ...formData, admin_email: e.target.value })}
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="admin_password">Admin Password *</Label>
-                      <Input
-                        id="admin_password"
-                        type="password"
-                        placeholder="Minimum 6 characters"
-                        value={formData.admin_password}
-                        onChange={(e) => setFormData({ ...formData, admin_password: e.target.value })}
-                        required
-                        minLength={6}
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
               <div className="flex gap-3 pt-4">
                 <Button
                   type="button"
@@ -352,7 +269,7 @@ export default function Colleges() {
                   Cancel
                 </Button>
                 <Button type="submit" className="flex-1">
-                  {editingCollege ? 'Update College' : 'Create College & Admin'}
+                  {editingCollege ? 'Update College' : 'Create College'}
                 </Button>
               </div>
             </form>
