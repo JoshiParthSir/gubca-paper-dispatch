@@ -91,7 +91,7 @@ export default function Colleges() {
         // Validate form data
         const validatedData = collegeSchema.parse(formData);
 
-        // Create the college
+        // First create the college
         const { data: collegeData, error: collegeError } = await supabase
           .from('colleges')
           .insert([{
@@ -101,9 +101,7 @@ export default function Colleges() {
             contact_email: validatedData.contact_email || null,
             contact_phone: validatedData.contact_phone || null,
             created_by: user!.id
-          }])
-          .select()
-          .single();
+          }]);
 
         if (collegeError) throw collegeError;
 
@@ -202,11 +200,7 @@ export default function Colleges() {
               </DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* College Information Section */}
               <div className="space-y-4">
-                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-                  College Information
-                </h3>
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="name">College Name *</Label>

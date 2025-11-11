@@ -18,7 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Pencil, KeyRound, Loader2, Trash } from "lucide-react";
+import { Pencil, KeyRound, Loader2 } from "lucide-react";
 
 interface CollegeAdmin {
   user_id: string;
@@ -38,18 +38,12 @@ export default function CollegeAdmins() {
   const [admins, setAdmins] = useState<CollegeAdmin[]>([]);
   const [colleges, setColleges] = useState<College[]>([]);
   const [loading, setLoading] = useState(true);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editingAdmin, setEditingAdmin] = useState<CollegeAdmin | null>(null);
   const [editFormData, setEditFormData] = useState({ full_name: "", college_id: "" });
-  // new state for create form (separate from edit)
-  const [createFormData, setCreateFormData] = useState({
-    full_name: "",
-    email: "",
-    password: "",
-    college_id: "",
-  });
   const [newPassword, setNewPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const { toast } = useToast();
@@ -271,33 +265,6 @@ export default function CollegeAdmins() {
     }
   };
 
-  const handleDeleteAdmin = async (user_id: string) => {
-    try {
-      setSubmitting(true);
-      const { error } = await supabase
-        .from("profiles")
-        .delete()
-        .eq("user_id", user_id);
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "Admin deleted successfully",
-      });
-
-      fetchData();
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -308,20 +275,9 @@ export default function CollegeAdmins() {
 
   return (
     <div className="container mx-auto py-8 px-4">
-      <div className="mb-8 flex items-center justify-between">
-        <div>
-          <h1 className="text-4xl font-bold mb-2">College Admins Management</h1>
-          <p className="text-muted-foreground">View and manage college administrator accounts</p>
-        </div>
-        <div>
-          <Button onClick={() => {
-            // reset create form and open dialog
-            setCreateFormData({ full_name: "", email: "", password: "", college_id: "" });
-            setCreateDialogOpen(true);
-          }}>
-            Add Admin
-          </Button>
-        </div>
+      <div className="mb-8">
+        <h1 className="text-4xl font-bold mb-2">College Admins Management</h1>
+        <p className="text-muted-foreground">View and manage college administrator accounts</p>
       </div>
 
       <div className="grid gap-4">
@@ -352,14 +308,6 @@ export default function CollegeAdmins() {
                 >
                   <KeyRound className="h-4 w-4 mr-2" />
                   Reset Password
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleDeleteAdmin(admin.user_id)}
-                >
-                  <Trash className="h-4 w-4 mr-2" />
-                  Delete
                 </Button>
               </div>
             </div>
