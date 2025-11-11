@@ -13,6 +13,12 @@ interface DownloadLog {
   profiles: {
     full_name: string;
     email: string;
+    college_id?: string | null;
+    college?: {
+      id: string;
+      name: string;
+      code: string;
+    } | null;
   };
   allocations: {
     exam_date: string;
@@ -52,22 +58,44 @@ export default function DownloadLogs() {
 
       if (error) throw error;
 
-      // Manually fetch related data for each log
       const enrichedLogs = await Promise.all(
-        (data || []).map(async (log) => {
+        (data || []).map(async (log: any) => {
           // Fetch profile
-          const { data: profileData } = await supabase
+          const { data: profileData, error: profileError } = await supabase
             .from('profiles')
-            .select('full_name, email')
+            .select('full_name, email, college_id')
             .eq('user_id', log.downloaded_by)
-            .single();
+            .maybeSingle();
+
+          if (profileError) {
+            console.warn('profile fetch error for', log.downloaded_by, profileError);
+          }
+
+          // If profile has college_id, fetch college info
+          let downloaderCollege: { id: string; name: string; code: string } | null = null;
+          try {
+            if (profileData?.college_id) {
+              const { data: collegeByProfile } = await supabase
+                .from('colleges')
+                .select('id, name, code')
+                .eq('id', profileData.college_id)
+                .maybeSingle();
+              if (collegeByProfile) downloaderCollege = collegeByProfile as any;
+            }
+          } catch (err) {
+            console.warn('failed to fetch downloader college', err);
+          }
 
           // Fetch allocation with paper and college
-          const { data: allocationData } = await supabase
+          const { data: allocationData, error: allocationError } = await supabase
             .from('allocations')
             .select('exam_date, paper_id')
             .eq('id', log.allocation_id)
-            .single();
+            .maybeSingle();
+
+          if (allocationError) {
+            console.warn('allocation fetch error for', log.allocation_id, allocationError);
+          }
 
           let paperData = null;
           let collegeData = null;
@@ -78,22 +106,23 @@ export default function DownloadLogs() {
               .from('papers')
               .select('title, subject')
               .eq('id', allocationData.paper_id)
-              .single();
+              .maybeSingle();
             paperData = paper;
 
-            // Fetch college through allocation_colleges
+            // Fetch college through allocation_colleges (pick first if many)
             const { data: allocationCollege } = await supabase
               .from('allocation_colleges')
               .select('college_id')
               .eq('allocation_id', log.allocation_id)
-              .single();
+              .limit(1)
+              .maybeSingle();
 
-            if (allocationCollege) {
+            if (allocationCollege?.college_id) {
               const { data: college } = await supabase
                 .from('colleges')
                 .select('name, code')
                 .eq('id', allocationCollege.college_id)
-                .single();
+                .maybeSingle();
               collegeData = college;
             }
           }
@@ -103,13 +132,18 @@ export default function DownloadLogs() {
             download_time: log.download_time,
             ip_address: log.ip_address as string | null,
             user_agent: log.user_agent as string | null,
-            profiles: profileData || { full_name: 'Unknown', email: 'N/A' },
+            profiles: {
+              full_name: profileData?.full_name || 'Unknown',
+              email: profileData?.email || 'N/A',
+              college_id: profileData?.college_id || null,
+              college: downloaderCollege,
+            },
             allocations: {
               exam_date: allocationData?.exam_date || 'N/A',
               papers: paperData || { title: 'Unknown', subject: 'N/A' },
               colleges: collegeData || { name: 'Unknown', code: 'N/A' },
             },
-          };
+          } as DownloadLog;
         })
       );
 
@@ -169,7 +203,12 @@ export default function DownloadLogs() {
                     </div>
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4 text-muted-foreground" />
-                      <span>College: {log.allocations.colleges.name} ({log.allocations.colleges.code})</span>
+                      {/* Show downloader's college in the main "College" field if available, otherwise fall back to allocation college */}
+                      { (log.profiles.college && log.profiles.college.name) ? (
+                        <span>College: {log.profiles.college.name} ({log.profiles.college.code})</span>
+                      ) : (
+                        <span>College: {log.allocations.colleges.name} ({log.allocations.colleges.code})</span>
+                      )}
                     </div>
                     <div className="flex items-center gap-2">
                       <Clock className="h-4 w-4 text-muted-foreground" />

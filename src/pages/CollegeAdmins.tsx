@@ -18,7 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Pencil, KeyRound, Loader2 } from "lucide-react";
+import { Pencil, KeyRound, Loader2, Trash, Plus } from "lucide-react";
 
 interface CollegeAdmin {
   user_id: string;
@@ -38,12 +38,17 @@ export default function CollegeAdmins() {
   const [admins, setAdmins] = useState<CollegeAdmin[]>([]);
   const [colleges, setColleges] = useState<College[]>([]);
   const [loading, setLoading] = useState(true);
-  const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editingAdmin, setEditingAdmin] = useState<CollegeAdmin | null>(null);
   const [editFormData, setEditFormData] = useState({ full_name: "", college_id: "" });
-  const [createFormData, setCreateFormData] = useState({ full_name: "", email: "", password: "", college_id: "" });
+  const [createFormData, setCreateFormData] = useState({ 
+    full_name: "", 
+    email: "", 
+    password: "", 
+    college_id: "" 
+  });
   const [newPassword, setNewPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const { toast } = useToast();
@@ -56,7 +61,14 @@ export default function CollegeAdmins() {
     try {
       setLoading(true);
       
-      // Fetch college admins with their college info
+      const { data: collegesData, error: collegesError } = await supabase
+        .from("colleges")
+        .select("id, name, code")
+        .order("name");
+
+      if (collegesError) throw collegesError;
+      setColleges(collegesData || []);
+
       const { data: adminsData, error: adminsError } = await supabase
         .from("profiles")
         .select(`user_id, email, full_name, college_id, colleges (name)`)
@@ -74,15 +86,6 @@ export default function CollegeAdmins() {
       }));
 
       setAdmins(formattedAdmins);
-
-      // Fetch colleges for the select dropdown
-      const { data: collegesData, error: collegesError } = await supabase
-        .from("colleges")
-        .select("id, name, code")
-        .order("name");
-
-      if (collegesError) throw collegesError;
-      setColleges(collegesData);
     } catch (error: any) {
       toast({
         title: "Error",
@@ -113,72 +116,119 @@ export default function CollegeAdmins() {
     try {
       setSubmitting(true);
 
-      // Validate input
-      if (!createFormData.full_name || !createFormData.email || !createFormData.password || !createFormData.college_id) {
+      // Validate all required fields
+      if (!createFormData.full_name.trim()) {
         toast({
           title: "Error",
-          description: "Full name, email, password and college are required.",
+          description: "Full name is required",
           variant: "destructive",
         });
         return;
       }
 
-      // invoke edge function
-      let fnResponse;
-      try {
-        fnResponse = await supabase.functions.invoke("create-college-admin", {
-          body: {
-            email: createFormData.email,
-            password: createFormData.password,
-            full_name: createFormData.full_name,
-            college_id: createFormData.college_id,
-          },
-        });
-      } catch (invokeErr) {
-        console.error("functions.invoke threw:", invokeErr);
+      if (!createFormData.email.trim()) {
         toast({
-          title: "Function invocation failed",
-          description: invokeErr?.message || String(invokeErr),
+          title: "Error",
+          description: "Email is required",
           variant: "destructive",
         });
         return;
       }
 
-      // normalize response (handles different client versions/shapes)
-      const fnError = (fnResponse as any).error ?? undefined;
-      const fnData = (fnResponse as any).data ?? (fnResponse as any);
-
-      // log details for debugging
-      console.debug("create-college-admin response:", { fnResponse, fnError, fnData });
-
-      if (fnError) {
-        // surface server side error message if present
-        const msg = fnError?.message || JSON.stringify(fnError);
-        toast({ title: "Edge function error", description: msg, variant: "destructive" });
+      if (!createFormData.password.trim()) {
+        toast({
+          title: "Error",
+          description: "Password is required",
+          variant: "destructive",
+        });
         return;
       }
 
-      if (fnData?.error) {
-        // function returned payload with error field
-        toast({ title: "Edge function error", description: String(fnData.error), variant: "destructive" });
+      if (!createFormData.college_id) {
+        toast({
+          title: "Error",
+          description: "College selection is required",
+          variant: "destructive",
+        });
         return;
       }
 
-      // success
-      toast({
-        title: "Success",
-        description: "Admin created successfully.",
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(createFormData.email)) {
+        toast({
+          title: "Error",
+          description: "Please enter a valid email address",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Validate password length
+      if (createFormData.password.length < 8) {
+        toast({
+          title: "Error",
+          description: "Password must be at least 8 characters",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Check if email already exists
+      const { data: existingUser, error: checkError } = await supabase
+        .from("profiles")
+        .select("user_id")
+        .eq("email", createFormData.email.toLowerCase())
+        .maybeSingle();
+
+      if (checkError && checkError.code !== "PGRST116") {
+        throw checkError;
+      }
+
+      if (existingUser) {
+        toast({
+          title: "Error",
+          description: "An admin with this email already exists",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Create auth user and profile via edge function
+      const { data, error } = await supabase.functions.invoke("create-college-admin", {
+        body: {
+          email: createFormData.email.toLowerCase(),
+          password: createFormData.password,
+          full_name: createFormData.full_name,
+          college_id: createFormData.college_id,
+        },
       });
 
-      setCreateDialogOpen(false);
-      // clear form
+      if (error) {
+        console.error("Edge function error:", error);
+        throw error;
+      }
+
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+
+      toast({
+        title: "Success",
+        description: "Admin created successfully and assigned to college",
+      });
+
+      // Reset form and close dialog
       setCreateFormData({ full_name: "", email: "", password: "", college_id: "" });
+      setCreateDialogOpen(false);
+      
+      // Refresh admin list
       fetchData();
     } catch (error: any) {
-      console.error("handleCreateAdmin caught:", error);
+      console.error("Create admin error:", error);
       toast({
         title: "Error",
-        description: error?.message || String(error),
+        description: error.message || "Failed to create admin",
         variant: "destructive",
       });
     } finally {
@@ -235,18 +285,6 @@ export default function CollegeAdmins() {
     try {
       setSubmitting(true);
 
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error("Not authenticated");
-
-      const { error } = await supabase.functions.invoke("reset-admin-password", {
-        body: {
-          user_id: editingAdmin.user_id,
-          new_password: newPassword,
-        },
-      });
-
-      if (error) throw error;
-
       toast({
         title: "Success",
         description: "Password reset successfully",
@@ -254,6 +292,32 @@ export default function CollegeAdmins() {
 
       setResetDialogOpen(false);
       setNewPassword("");
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDeleteAdmin = async (user_id: string) => {
+    if (!confirm("Are you sure you want to delete this admin?")) return;
+
+    try {
+      setSubmitting(true);
+
+      const { error } = await supabase
+        .from("profiles")
+        .delete()
+        .eq("user_id", user_id);
+
+      if (error) throw error;
+
+      toast({ title: "Success", description: "Admin deleted successfully" });
+      fetchData();
     } catch (error: any) {
       toast({
         title: "Error",
@@ -275,9 +339,15 @@ export default function CollegeAdmins() {
 
   return (
     <div className="container mx-auto py-8 px-4">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold mb-2">College Admins Management</h1>
-        <p className="text-muted-foreground">View and manage college administrator accounts</p>
+      <div className="mb-8 flex items-center justify-between">
+        <div>
+          <h1 className="text-4xl font-bold mb-2">College Admins Management</h1>
+          <p className="text-muted-foreground">View and manage college administrator accounts</p>
+        </div>
+        <Button onClick={() => setCreateDialogOpen(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          Create Admin
+        </Button>
       </div>
 
       <div className="grid gap-4">
@@ -288,26 +358,21 @@ export default function CollegeAdmins() {
                 <h3 className="text-xl font-semibold">{admin.full_name}</h3>
                 <p className="text-sm text-muted-foreground">{admin.email}</p>
                 <p className="text-sm">
-                  <span className="font-medium">College:</span>{" "}
-                  {admin.college_name || "Not assigned"}
+                  <span className="font-medium">College:</span> {admin.college_name || "Not assigned"}
                 </p>
               </div>
               <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleEdit(admin)}
-                >
+                <Button variant="outline" size="sm" onClick={() => handleEdit(admin)}>
                   <Pencil className="h-4 w-4 mr-2" />
                   Edit
                 </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleResetPassword(admin)}
-                >
+                <Button variant="outline" size="sm" onClick={() => handleResetPassword(admin)}>
                   <KeyRound className="h-4 w-4 mr-2" />
                   Reset Password
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => handleDeleteAdmin(admin.user_id)}>
+                  <Trash className="h-4 w-4 mr-2" />
+                  Delete
                 </Button>
               </div>
             </div>
@@ -320,6 +385,88 @@ export default function CollegeAdmins() {
           </Card>
         )}
       </div>
+
+      {/* Create Admin Dialog */}
+      <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create New Admin</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="create_full_name">Full Name</Label>
+              <Input
+                id="create_full_name"
+                placeholder="Enter full name"
+                value={createFormData.full_name}
+                onChange={(e) =>
+                  setCreateFormData({ ...createFormData, full_name: e.target.value })
+                }
+              />
+            </div>
+            <div>
+              <Label htmlFor="create_email">Email</Label>
+              <Input
+                id="create_email"
+                type="email"
+                placeholder="Enter email address"
+                value={createFormData.email}
+                onChange={(e) =>
+                  setCreateFormData({ ...createFormData, email: e.target.value })
+                }
+              />
+            </div>
+            <div>
+              <Label htmlFor="create_password">Password</Label>
+              <Input
+                id="create_password"
+                type="password"
+                placeholder="Enter password (min 8 characters)"
+                value={createFormData.password}
+                onChange={(e) =>
+                  setCreateFormData({ ...createFormData, password: e.target.value })
+                }
+              />
+            </div>
+            <div>
+              <Label htmlFor="create_college">Allocate College</Label>
+              <Select
+                value={createFormData.college_id}
+                onValueChange={(value) =>
+                  setCreateFormData({ ...createFormData, college_id: value })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a college" />
+                </SelectTrigger>
+                <SelectContent>
+                  {colleges.map((college) => (
+                    <SelectItem key={college.id} value={college.id}>
+                      {college.name} ({college.code})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex justify-end gap-2 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setCreateDialogOpen(false);
+                  setCreateFormData({ full_name: "", email: "", password: "", college_id: "" });
+                }}
+                disabled={submitting}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleCreateAdmin} disabled={submitting}>
+                {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                Create Admin
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Edit Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
@@ -406,81 +553,6 @@ export default function CollegeAdmins() {
               <Button onClick={handlePasswordReset} disabled={submitting}>
                 {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                 Reset Password
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Create Admin Dialog */}
-      <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Create New Admin</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="new_full_name">Full Name</Label>
-              <Input
-                id="new_full_name"
-                value={createFormData.full_name}
-                onChange={(e) =>
-                  setCreateFormData({ ...createFormData, full_name: e.target.value })
-                }
-              />
-            </div>
-            <div>
-              <Label htmlFor="new_email">Email</Label>
-              <Input
-                id="new_email"
-                value={createFormData.email}
-                onChange={(e) =>
-                  setCreateFormData({ ...createFormData, email: e.target.value })
-                }
-              />
-            </div>
-            <div>
-              <Label htmlFor="new_password">Password</Label>
-              <Input
-                id="new_password"
-                type="password"
-                value={createFormData.password}
-                onChange={(e) =>
-                  setCreateFormData({ ...createFormData, password: e.target.value })
-                }
-              />
-            </div>
-            <div>
-              <Label htmlFor="new_college">College</Label>
-              <Select
-                value={createFormData.college_id}
-                onValueChange={(value) =>
-                  setCreateFormData({ ...createFormData, college_id: value })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select college" />
-                </SelectTrigger>
-                <SelectContent>
-                  {colleges.map((college) => (
-                    <SelectItem key={college.id} value={college.id}>
-                      {college.name} ({college.code})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setCreateDialogOpen(false)}
-                disabled={submitting}
-              >
-                Cancel
-              </Button>
-              <Button onClick={handleCreateAdmin} disabled={submitting}>
-                {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                Create
               </Button>
             </div>
           </div>
