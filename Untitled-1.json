@@ -1,0 +1,6 @@
+{
+  "scripts": {
+    "test": "bun test",
+    "start": "node src/index.js"
+  }
+}
