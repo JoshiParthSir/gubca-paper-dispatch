@@ -41,9 +41,9 @@ export default function CollegeAdmins() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
-  const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editingAdmin, setEditingAdmin] = useState<CollegeAdmin | null>(null);
   const [editFormData, setEditFormData] = useState({ full_name: "", college_id: "" });
+  const [createFormData, setCreateFormData] = useState({ full_name: "", email: "", password: "", college_id: "" });
   const [newPassword, setNewPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const { toast } = useToast();
