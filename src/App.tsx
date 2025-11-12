@@ -16,6 +16,7 @@ import Allocations from "./pages/Allocations";
 import MyPapers from "./pages/MyPapers";
 import DownloadLogs from "./pages/DownloadLogs";
 import Settings from "./pages/Settings";
+import Profile from "./pages/Profile";
 import { DashboardLayout } from "./components/layout/DashboardLayout";
 
 const queryClient = new QueryClient();
@@ -77,6 +78,11 @@ const App = () => (
             <Route path="/dashboard/settings" element={
               <DashboardLayout>
                 <Settings />
+              </DashboardLayout>
+            } />
+            <Route path="/dashboard/profile" element={
+              <DashboardLayout>
+                <Profile />
               </DashboardLayout>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

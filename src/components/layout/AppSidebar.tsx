@@ -20,6 +20,7 @@ import {
   BarChart3,
   Settings,
   UserCog,
+  User,
 } from 'lucide-react';
 
 const chairpersonItems = [
@@ -36,6 +37,7 @@ const collegeAdminItems = [
   { title: 'Dashboard', url: '/dashboard', icon: BarChart3 },
   { title: 'Scheduled Papers', url: '/dashboard/scheduled', icon: Calendar },
   { title: 'Downloads', url: '/dashboard/downloads', icon: Download },
+  { title: 'Profile', url: '/dashboard/profile', icon: User },
 ];
 
 export function AppSidebar() {

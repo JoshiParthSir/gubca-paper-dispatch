@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 import { Pencil, KeyRound, Loader2, Trash, Plus } from "lucide-react";
 
 interface CollegeAdmin {
@@ -52,10 +53,45 @@ export default function CollegeAdmins() {
   const [newPassword, setNewPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const { toast } = useToast();
+  const { user, profile } = useAuth();
 
   useEffect(() => {
     fetchData();
-  }, []);
+    checkUserRole();
+  }, [user]);
+
+  const checkUserRole = async () => {
+    if (!user) return;
+    
+    try {
+      // Check if user has chairperson role in user_roles table
+      const { data: userRoles, error } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id);
+
+      console.log("Current user roles:", userRoles);
+      console.log("Current user profile:", profile);
+      
+      // Test the check_user_role function directly
+      const { data: roleCheckResult, error: roleCheckError } = await supabase
+        .rpc('check_user_role', { _user_id: user.id, _role: 'chairperson' });
+      
+      console.log("Role check function result:", roleCheckResult);
+      console.log("Role check function error:", roleCheckError);
+      
+      toast({
+        title: "Debug Info",
+        description: `Roles: ${userRoles?.map(r => r.role).join(', ') || 'None'}, Chairperson check: ${roleCheckResult}`,
+      });
+      
+      if (error) {
+        console.error("Error checking user roles:", error);
+      }
+    } catch (error) {
+      console.error("Error in checkUserRole:", error);
+    }
+  };
 
   const fetchData = async () => {
     try {
@@ -195,6 +231,8 @@ export default function CollegeAdmins() {
       }
 
       // Create auth user and profile via edge function
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
       const { data, error } = await supabase.functions.invoke("create-college-admin", {
         body: {
           email: createFormData.email.toLowerCase(),
@@ -202,6 +240,7 @@ export default function CollegeAdmins() {
           full_name: createFormData.full_name,
           college_id: createFormData.college_id,
         },
+        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
       });
 
       if (error) {
@@ -242,15 +281,54 @@ export default function CollegeAdmins() {
     try {
       setSubmitting(true);
 
-      const { error } = await supabase
-        .from("profiles")
-        .update({
+      // Validate required fields
+      if (!editFormData.full_name.trim()) {
+        toast({
+          title: "Error",
+          description: "Full name is required",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Use an edge function to safely update another user's profile
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+      
+      if (!accessToken) {
+        toast({
+          title: "Error",
+          description: "Authentication required. Please log in again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      console.log("Updating admin:", {
+        user_id: editingAdmin.user_id,
+        full_name: editFormData.full_name,
+        college_id: editFormData.college_id || null,
+      });
+
+      const { data, error } = await supabase.functions.invoke("update-college-admin", {
+        body: {
+          user_id: editingAdmin.user_id,
           full_name: editFormData.full_name,
           college_id: editFormData.college_id || null,
-        })
-        .eq("user_id", editingAdmin.user_id);
+        },
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
 
-      if (error) throw error;
+      console.log("Edge function response:", { data, error });
+
+      if (error) {
+        console.error("Edge function error:", error);
+        throw new Error(`Failed to send request to edge function: ${error.message}`);
+      }
+
+      if (data?.error) {
+        throw new Error(data.error);
+      }
 
       toast({
         title: "Success",
@@ -260,9 +338,10 @@ export default function CollegeAdmins() {
       setEditDialogOpen(false);
       fetchData();
     } catch (error: any) {
+      console.error("Update admin error:", error);
       toast({
         title: "Error",
-        description: error.message,
+        description: error.message || "Failed to update admin details",
         variant: "destructive",
       });
     } finally {
@@ -284,6 +363,24 @@ export default function CollegeAdmins() {
 
     try {
       setSubmitting(true);
+
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+      const { data, error } = await supabase.functions.invoke("reset-admin-password", {
+        body: {
+          user_id: editingAdmin.user_id,
+          new_password: newPassword,
+        },
+        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data?.error) {
+        throw new Error(data.error);
+      }
 
       toast({
         title: "Success",
@@ -343,11 +440,21 @@ export default function CollegeAdmins() {
         <div>
           <h1 className="text-4xl font-bold mb-2">College Admins Management</h1>
           <p className="text-muted-foreground">View and manage college administrator accounts</p>
+          {profile && (
+            <p className="text-sm text-muted-foreground mt-1">
+              Current user: {profile.full_name} ({profile.role})
+            </p>
+          )}
         </div>
-        <Button onClick={() => setCreateDialogOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Create Admin
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={checkUserRole}>
+            Debug Role
+          </Button>
+          <Button onClick={() => setCreateDialogOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Create Admin
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-4">
