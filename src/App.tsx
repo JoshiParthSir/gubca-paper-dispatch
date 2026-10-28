@@ -7,7 +7,6 @@ import { AuthProvider } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import LoginPage from "./components/auth/LoginPage";
-import SetPassword from "./pages/SetPassword";
 import Dashboard from "./pages/Dashboard";
 import Colleges from "./pages/Colleges";
 import CollegeAdmins from "./pages/CollegeAdmins";
@@ -31,7 +30,6 @@ const App = () => (
         <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<LoginPage />} />
-            <Route path="/set-password" element={<SetPassword />} />
             <Route path="/dashboard" element={
               <DashboardLayout>
                 <Dashboard />
