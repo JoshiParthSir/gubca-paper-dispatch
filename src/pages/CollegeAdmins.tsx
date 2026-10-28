@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { Pencil, KeyRound, Loader2, Trash, Plus } from "lucide-react";
+import { Pencil, KeyRound, Loader2, Trash, Plus, Copy } from "lucide-react";
 
 interface CollegeAdmin {
   user_id: string;
@@ -47,9 +47,9 @@ export default function CollegeAdmins() {
   const [createFormData, setCreateFormData] = useState({ 
     full_name: "", 
     email: "", 
-    password: "", 
     college_id: "" 
   });
+  const [inviteLink, setInviteLink] = useState<string | null>(null);
   const [newPassword, setNewPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const { toast } = useToast();
@@ -171,14 +171,6 @@ export default function CollegeAdmins() {
         return;
       }
 
-      if (!createFormData.password.trim()) {
-        toast({
-          title: "Error",
-          description: "Password is required",
-          variant: "destructive",
-        });
-        return;
-      }
 
       if (!createFormData.college_id) {
         toast({
