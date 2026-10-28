@@ -9,7 +9,7 @@ const corsHeaders = {
 
 serve(async (req) => {
   console.log('Edge function called:', req.method)
-  
+
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
@@ -18,7 +18,7 @@ serve(async (req) => {
     // Verify the caller is authenticated
     const authHeader = req.headers.get('Authorization')
     console.log('Auth header present:', !!authHeader)
-    
+
     if (!authHeader) {
       console.error('No authorization header provided')
       return new Response(
@@ -53,7 +53,7 @@ serve(async (req) => {
     // Verify the user's identity
     const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token)
     console.log('User verification:', { userId: user?.id, hasError: !!authError })
-    
+
     if (authError || !user) {
       console.error('Auth error:', authError?.message)
       return new Response(
@@ -76,11 +76,11 @@ serve(async (req) => {
       )
     }
 
-    const { email, password, full_name, college_id } = await req.json()
-    console.log('Request data received:', { email, full_name, college_id, hasPassword: !!password })
+    const { email, full_name, college_id, redirect_to } = await req.json()
+    console.log('Request data received:', { email, full_name, college_id, redirect_to })
 
-    // Validate inputs
-    if (!email || !password || !full_name || !college_id) {
+    // Validate inputs (no password: the invited admin sets their own via email link)
+    if (!email || !full_name || !college_id) {
       return new Response(
         JSON.stringify({ error: 'Missing required fields' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -96,24 +96,36 @@ serve(async (req) => {
       )
     }
 
-    // Validate password strength (minimum 8 characters)
-    if (password.length < 8) {
-      return new Response(
-        JSON.stringify({ error: 'Password must be at least 8 characters' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+    // Validate redirect target: same-app set-password page only
+    let safeRedirect: string | null = null
+    if (redirect_to) {
+      try {
+        const url = new URL(redirect_to)
+        const isHttps = url.protocol === 'https:'
+        const isLocal = url.hostname === 'localhost' || url.hostname === '127.0.0.1'
+        if ((isHttps || isLocal) && url.pathname === '/set-password' && !url.username && !url.password) {
+          safeRedirect = url.toString()
+        }
+      } catch (_) {
+        // invalid URL, fall back to default below
+      }
     }
+    if (!safeRedirect) {
+      const siteUrl = Deno.env.get('SITE_URL') ?? Deno.env.get('SUPABASE_URL') ?? ''
+      safeRedirect = siteUrl.replace(/\/$/, '') + '/set-password'
+    }
+    console.log('Invite redirect:', safeRedirect)
 
     // Sanitize inputs (prevent XSS)
     const sanitizedFullName = full_name.trim().substring(0, 100)
     const sanitizedEmail = email.trim().toLowerCase().substring(0, 255)
 
-    // Create user using admin API
+    // Create auth user without a password; email stays unconfirmed until
+    // the invited admin accepts the invite and sets their own password
     console.log('Creating user account...')
     const { data: userData, error: userError } = await supabaseAdmin.auth.admin.createUser({
       email: sanitizedEmail,
-      password,
-      email_confirm: true,
+      email_confirm: false,
       user_metadata: {
         full_name: sanitizedFullName,
         role: 'college_admin'
@@ -140,9 +152,27 @@ serve(async (req) => {
       throw profileError
     }
 
-    console.log('College admin created successfully')
+    // Send the invite email (built-in invite template); the emailed link
+    // confirms the address and opens the set-password page
+    let inviteLink: string | null = null
+    let emailWarning: string | null = null
+    const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
+      type: 'invite',
+      email: sanitizedEmail,
+      options: { redirectTo: safeRedirect }
+    })
+
+    if (linkError) {
+      console.error('Invite link error:', linkError.message)
+      emailWarning = `Invite email could not be sent: ${linkError.message}`
+    } else {
+      inviteLink = linkData?.properties?.action_link ?? null
+      console.log('Invite link generated')
+    }
+
+    console.log('College admin invited successfully')
     return new Response(
-      JSON.stringify({ success: true, user_id: userData.user.id }),
+      JSON.stringify({ success: true, user_id: userData.user.id, invite_link: inviteLink, warning: emailWarning }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error: any) {
