@@ -22,3 +22,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Supabase CLI local state (machine-specific)
+supabase/.temp
+
+# Vercel
+.vercel
+.env*.local

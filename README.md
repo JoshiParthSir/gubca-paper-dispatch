@@ -1,10 +1,10 @@
-# GUBCA Paper Dispatch System
+# Paper Dispatch
 
 A comprehensive exam paper allocation and dispatch management system designed for educational institutions to streamline the process of managing exam papers, college assignments, and administrative workflows.
 
 ## 🎯 Project Overview
 
-The GUBCA Paper Dispatch System is a modern web application that facilitates:
+Paper Dispatch is a modern web application that facilitates:
 
 - **Exam Paper Management**: Create, organize, and manage exam papers
 - **College Administration**: Manage colleges, batches, and administrative staff
@@ -41,8 +41,8 @@ The GUBCA Paper Dispatch System is a modern web application that facilitates:
 
 1. **Clone the repository**
    ```bash
-   git clone <repository-url>
-   cd gubca-paper-dispatch
+   git clone <repository-url> paper-dispatch
+   cd paper-dispatch
    ```
 
 2. **Install dependencies**
@@ -116,29 +116,46 @@ src/
 
 ## 🚀 Deployment
 
-### Environment Variables
+### Frontend on Vercel
 
-Create a `.env` file with the following variables:
+The repository is ready for Vercel: `vercel.json` sets the build, serves every app route
+(`/dashboard/...`, `/about`, …) from `index.html`, caches hashed assets for a year and adds
+security headers.
 
-```env
-VITE_SUPABASE_URL=your_supabase_project_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-```
+1. In Vercel, **Add New → Project** and import this GitHub repository.
+2. Vercel reads `vercel.json` (install `npm ci`, build `npm run build`, output `dist`). Leave the defaults.
+3. Under **Environment Variables**, add these (current values are in `.env`; see `.env.example`):
 
-### Build for Production
+   | Name | Value |
+   |---|---|
+   | `VITE_SUPABASE_PROJECT_ID` | your Supabase project ref |
+   | `VITE_SUPABASE_URL` | `https://<project-ref>.supabase.co` |
+   | `VITE_SUPABASE_PUBLISHABLE_KEY` | the Supabase publishable key |
+
+   These are public browser values; data is protected by row-level security.
+4. Deploy. Every push to `main` redeploys automatically.
+
+### Backend on Supabase
+
+Database changes and edge functions are deployed from your machine with the Supabase CLI:
 
 ```bash
-npm run build
+npx supabase login
+npx supabase link --project-ref <project-ref>
+npx supabase db push            # apply new migrations
+npx supabase functions deploy   # deploy all edge functions
 ```
 
-### Deploy to Netlify/Vercel
+In the Supabase dashboard, turn off **Authentication → Sign In / Providers → Allow new users
+to sign up**: accounts are created by the university only.
 
-The application can be easily deployed to modern hosting platforms:
+### Local development
 
-1. Connect your repository to your hosting platform
-2. Set the build command to `npm run build`
-3. Set the publish directory to `dist`
-4. Configure environment variables
+```bash
+npm ci
+npm run dev      # http://localhost:8080
+npm run build    # production build in dist/
+```
 
 ## 📝 Contributing
 

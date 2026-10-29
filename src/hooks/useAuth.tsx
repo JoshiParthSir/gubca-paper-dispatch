@@ -1,6 +1,7 @@
 import React, { useState, useEffect, createContext, useContext, type ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { clearPageCache } from '@/lib/page-cache';
 
 interface AuthContextType {
   user: User | null;
@@ -33,16 +34,20 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   useEffect(() => {
     let mounted = true;
+    // The profile is loaded once per signed-in user, not on every auth event
+    // (initial session, token refresh, etc. would otherwise refetch it).
+    let profileUserId: string | null = null;
 
     const fetchProfile = async (userId: string) => {
+      profileUserId = userId;
       try {
         const { data: profileData } = await supabase
           .from('profiles')
           .select('*')
           .eq('user_id', userId)
           .single();
-        
-        if (mounted) {
+
+        if (mounted && profileUserId === userId) {
           setProfile(profileData);
           setLoading(false);
         }
@@ -54,34 +59,25 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       }
     };
 
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (mounted) {
-          setSession(session);
-          setUser(session?.user ?? null);
-          
-          if (session?.user) {
-            fetchProfile(session.user.id);
-          } else {
-            setProfile(null);
-            setLoading(false);
-          }
-        }
-      }
-    );
+    // Fires INITIAL_SESSION on subscribe, so no separate getSession() call is needed
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!mounted) return;
+      setSession(session);
+      setUser(session?.user ?? null);
 
-    // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (mounted) {
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          fetchProfile(session.user.id);
-        } else {
-          setLoading(false);
+      const userId = session?.user?.id ?? null;
+      if (userId) {
+        if (userId !== profileUserId) {
+          // A different account: never show the previous account's cached pages
+          clearPageCache();
+          // Deferred so no Supabase call runs inside the auth callback
+          window.setTimeout(() => fetchProfile(userId), 0);
         }
+      } else {
+        profileUserId = null;
+        clearPageCache();
+        setProfile(null);
+        setLoading(false);
       }
     });
 
@@ -94,6 +90,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const signOut = async () => {
     try {
       // Clear local state first
+      clearPageCache();
       setUser(null);
       setSession(null);
       setProfile(null);

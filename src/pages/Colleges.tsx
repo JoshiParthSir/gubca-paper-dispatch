@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { hasCached, useCachedState } from '@/lib/page-cache';
+import { PageSkeleton } from '@/components/PageFallback';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -8,7 +10,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, Upload } from 'lucide-react';
+import { BulkImportDialog } from '@/components/BulkImportDialog';
 import { z } from 'zod';
 
 const collegeSchema = z.object({
@@ -32,9 +35,11 @@ interface College {
 export default function Colleges() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [colleges, setColleges] = useState<College[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [colleges, setColleges] = useCachedState<College[]>('colleges:colleges', []);
+  // Only the first visit shows a skeleton; later visits render cached data instantly
+  const [loading, setLoading] = useState(!hasCached('colleges:colleges'));
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [bulkOpen, setBulkOpen] = useState(false);
   const [editingCollege, setEditingCollege] = useState<College | null>(null);
   const [formData, setFormData] = useState({
     name: '',
@@ -175,109 +180,160 @@ export default function Colleges() {
     setDialogOpen(true);
   };
 
+  const importCollege = async (row: Record<string, string>) => {
+    const data = collegeSchema.parse(row);
+    const values = {
+      name: data.name,
+      code: data.code,
+      address: data.address || null,
+      contact_email: data.contact_email || null,
+      contact_phone: data.contact_phone || null,
+    };
+    const existing = colleges.find((c) => c.code.trim().toLowerCase() === data.code.toLowerCase());
+    if (existing) {
+      const { error } = await supabase.from('colleges').update(values).eq('id', existing.id);
+      if (error) throw error;
+      return 'Updated existing college';
+    }
+    const { error } = await supabase.from('colleges').insert({ ...values, created_by: user!.id });
+    if (error) throw error;
+    return 'Created';
+  };
+
   if (loading) {
-    return <div className="flex items-center justify-center h-64">Loading...</div>;
+    return <PageSkeleton />;
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Colleges</h1>
-        <Dialog open={dialogOpen} onOpenChange={(open) => {
-          setDialogOpen(open);
-          if (!open) resetForm();
-        }}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Add College
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="text-xl">
-                {editingCollege ? 'Edit College' : 'Add New College'}
-              </DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="space-y-4">
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">College Name *</Label>
-                    <Input
-                      id="name"
-                      placeholder="Enter college name"
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      required
-                    />
+      <div className="flex flex-wrap justify-between items-center gap-3">
+        <h1>Colleges</h1>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={() => setBulkOpen(true)}>
+            <Upload className="mr-2 h-4 w-4" />
+            Bulk Import
+          </Button>
+          <Dialog open={dialogOpen} onOpenChange={(open) => {
+            setDialogOpen(open);
+            if (!open) resetForm();
+          }}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                Add College
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="text-xl">
+                  {editingCollege ? 'Edit College' : 'Add New College'}
+                </DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="space-y-4">
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="name">College Name *</Label>
+                      <Input
+                        id="name"
+                        placeholder="Enter college name"
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="code">College Code *</Label>
+                      <Input
+                        id="code"
+                        placeholder="Enter college code"
+                        value={formData.code}
+                        onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+                        required
+                      />
+                    </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="code">College Code *</Label>
-                    <Input
-                      id="code"
-                      placeholder="Enter college code"
-                      value={formData.code}
-                      onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-                      required
+                    <Label htmlFor="address">Address</Label>
+                    <Textarea
+                      id="address"
+                      placeholder="Enter college address"
+                      value={formData.address}
+                      onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                      rows={3}
                     />
+                  </div>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Contact Email</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        placeholder="college@example.com"
+                        value={formData.contact_email}
+                        onChange={(e) => setFormData({ ...formData, contact_email: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="phone">Contact Phone</Label>
+                      <Input
+                        id="phone"
+                        placeholder="+1 234 567 8900"
+                        value={formData.contact_phone}
+                        onChange={(e) => setFormData({ ...formData, contact_phone: e.target.value })}
+                      />
+                    </div>
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="address">Address</Label>
-                  <Textarea
-                    id="address"
-                    placeholder="Enter college address"
-                    value={formData.address}
-                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                    rows={3}
-                  />
-                </div>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Contact Email</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="college@example.com"
-                      value={formData.contact_email}
-                      onChange={(e) => setFormData({ ...formData, contact_email: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Contact Phone</Label>
-                    <Input
-                      id="phone"
-                      placeholder="+1 234 567 8900"
-                      value={formData.contact_phone}
-                      onChange={(e) => setFormData({ ...formData, contact_phone: e.target.value })}
-                    />
-                  </div>
-                </div>
-              </div>
 
-              <div className="flex gap-3 pt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="flex-1"
-                  onClick={() => {
-                    setDialogOpen(false);
-                    resetForm();
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" className="flex-1">
-                  {editingCollege ? 'Update College' : 'Create College'}
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
+                <div className="flex gap-3 pt-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => {
+                      setDialogOpen(false);
+                      resetForm();
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="submit" className="flex-1">
+                    {editingCollege ? 'Update College' : 'Create College'}
+                  </Button>
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <BulkImportDialog
+        open={bulkOpen}
+        onOpenChange={setBulkOpen}
+        title="Bulk Import Colleges"
+        description="Rows whose code matches an existing college update that college; other rows create new colleges."
+        templateFileName="colleges-template.csv"
+        columns={[
+          { key: 'name', required: true },
+          { key: 'code', required: true, hint: 'unique college code' },
+          { key: 'address' },
+          { key: 'contact_email' },
+          { key: 'contact_phone' },
+        ]}
+        sampleRows={[['Sample College of Computer Science', 'COL001', 'Ahmedabad', 'principal@example.com', '9876543210']]}
+        validateRow={(row, i, all) => {
+          const parsed = collegeSchema.safeParse(row);
+          if (!parsed.success) return parsed.error.errors[0].message;
+          const code = row.code.trim().toLowerCase();
+          if (all.findIndex((r) => r.code?.trim().toLowerCase() === code) !== i) return 'Duplicate code in file';
+          return null;
+        }}
+        processRow={importCollege}
+        onComplete={fetchColleges}
+      />
+
+      <div className="stagger grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
         {colleges.map((college) => (
           <Card key={college.id}>
             <CardHeader>

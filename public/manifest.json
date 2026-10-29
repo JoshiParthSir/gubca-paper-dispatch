@@ -1,26 +1,42 @@
 {
-  "name": "GUBCA Paper Dispatch",
+  "name": "Paper Dispatch",
   "short_name": "Paper Dispatch",
-  "description": "Exam paper allocation and dispatch management system",
-  "start_url": "/",
+  "description": "Secure exam paper allocation and dispatch for universities and affiliated colleges",
+  "start_url": "/dashboard",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#000000",
-  "orientation": "portrait-primary",
+  "background_color": "#003366",
+  "theme_color": "#003366",
+  "orientation": "any",
   "icons": [
     {
       "src": "/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
     }
   ],
-  "categories": ["education", "productivity"],
-  "screenshots": []
+  "categories": [
+    "education",
+    "productivity"
+  ],
+  "screenshots": [],
+  "scope": "/"
 }

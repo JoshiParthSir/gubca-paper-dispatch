@@ -1,9 +1,13 @@
 import { useEffect, useState } from 'react';
+import { hasCached, useCachedState } from '@/lib/page-cache';
+import { PageSkeleton } from '@/components/PageFallback';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Download, Calendar, User, Clock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { downloadCsv } from '@/lib/csv';
 
 interface DownloadLog {
   id: string;
@@ -35,119 +39,63 @@ interface DownloadLog {
 
 export default function DownloadLogs() {
   const { toast } = useToast();
-  const [logs, setLogs] = useState<DownloadLog[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [logs, setLogs] = useCachedState<DownloadLog[]>('downloadlogs:logs', []);
+  // Only the first visit shows a skeleton; later visits render cached data instantly
+  const [loading, setLoading] = useState(!hasCached('downloadlogs:logs'));
 
   useEffect(() => {
     fetchLogs();
   }, []);
 
+  // Two requests in total, however many logs there are: one joined query for
+  // logs + allocation + paper + colleges, and one for the downloaders' profiles.
   const fetchLogs = async () => {
     try {
       const { data, error } = await supabase
         .from('download_logs')
-        .select(`
-          id,
-          download_time,
-          ip_address,
-          user_agent,
-          downloaded_by,
-          allocation_id
-        `)
-        .order('download_time', { ascending: false });
-
+        .select(
+          `id, download_time, ip_address, user_agent, downloaded_by,
+           allocations(exam_date, papers(title, subject), allocation_colleges(colleges(name, code)))`,
+        )
+        .order('download_time', { ascending: true });
       if (error) throw error;
 
-      const enrichedLogs = await Promise.all(
-        (data || []).map(async (log: any) => {
-          // Fetch profile
-          const { data: profileData, error: profileError } = await supabase
-            .from('profiles')
-            .select('full_name, email, college_id')
-            .eq('user_id', log.downloaded_by)
-            .maybeSingle();
+      const rows = (data ?? []) as any[];
+      const userIds = [...new Set(rows.map((r) => r.downloaded_by).filter(Boolean))] as string[];
 
-          if (profileError) {
-            console.warn('profile fetch error for', log.downloaded_by, profileError);
-          }
+      const profilesById = new Map<string, any>();
+      if (userIds.length > 0) {
+        const { data: profiles, error: profileError } = await supabase
+          .from('profiles')
+          .select('user_id, full_name, email, college_id, colleges(id, name, code)')
+          .in('user_id', userIds);
+        if (profileError) throw profileError;
+        for (const prof of profiles ?? []) profilesById.set(prof.user_id, prof);
+      }
 
-          // If profile has college_id, fetch college info
-          let downloaderCollege: { id: string; name: string; code: string } | null = null;
-          try {
-            if (profileData?.college_id) {
-              const { data: collegeByProfile } = await supabase
-                .from('colleges')
-                .select('id, name, code')
-                .eq('id', profileData.college_id)
-                .maybeSingle();
-              if (collegeByProfile) downloaderCollege = collegeByProfile as any;
-            }
-          } catch (err) {
-            console.warn('failed to fetch downloader college', err);
-          }
-
-          // Fetch allocation with paper and college
-          const { data: allocationData, error: allocationError } = await supabase
-            .from('allocations')
-            .select('exam_date, paper_id')
-            .eq('id', log.allocation_id)
-            .maybeSingle();
-
-          if (allocationError) {
-            console.warn('allocation fetch error for', log.allocation_id, allocationError);
-          }
-
-          let paperData = null;
-          let collegeData = null;
-
-          if (allocationData) {
-            // Fetch paper
-            const { data: paper } = await supabase
-              .from('papers')
-              .select('title, subject')
-              .eq('id', allocationData.paper_id)
-              .maybeSingle();
-            paperData = paper;
-
-            // Fetch college through allocation_colleges (pick first if many)
-            const { data: allocationCollege } = await supabase
-              .from('allocation_colleges')
-              .select('college_id')
-              .eq('allocation_id', log.allocation_id)
-              .limit(1)
-              .maybeSingle();
-
-            if (allocationCollege?.college_id) {
-              const { data: college } = await supabase
-                .from('colleges')
-                .select('name, code')
-                .eq('id', allocationCollege.college_id)
-                .maybeSingle();
-              collegeData = college;
-            }
-          }
-
+      setLogs(
+        rows.map((log) => {
+          const prof = log.downloaded_by ? profilesById.get(log.downloaded_by) : null;
+          const allocationCollege = log.allocations?.allocation_colleges?.[0]?.colleges ?? null;
           return {
             id: log.id,
             download_time: log.download_time,
             ip_address: log.ip_address as string | null,
             user_agent: log.user_agent as string | null,
             profiles: {
-              full_name: profileData?.full_name || 'Unknown',
-              email: profileData?.email || 'N/A',
-              college_id: profileData?.college_id || null,
-              college: downloaderCollege,
+              full_name: prof?.full_name || (log.downloaded_by ? 'Unknown' : 'Deleted admin'),
+              email: prof?.email || 'N/A',
+              college_id: prof?.college_id || null,
+              college: prof?.colleges ?? null,
             },
             allocations: {
-              exam_date: allocationData?.exam_date || 'N/A',
-              papers: paperData || { title: 'Unknown', subject: 'N/A' },
-              colleges: collegeData || { name: 'Unknown', code: 'N/A' },
+              exam_date: log.allocations?.exam_date || 'N/A',
+              papers: log.allocations?.papers || { title: 'Unknown', subject: 'N/A' },
+              colleges: allocationCollege || { name: 'Unknown', code: 'N/A' },
             },
           } as DownloadLog;
-        })
+        }),
       );
-
-      setLogs(enrichedLogs as DownloadLog[]);
     } catch (error: any) {
       toast({
         title: 'Error',
@@ -159,18 +107,44 @@ export default function DownloadLogs() {
     }
   };
 
+  const exportCsv = () => {
+    downloadCsv(`download-logs-${new Date().toISOString().slice(0, 10)}.csv`, [
+      ['downloaded_at', 'paper', 'subject', 'exam_date', 'admin_name', 'admin_email', 'college', 'college_code', 'ip_address'],
+      ...logs.map((log) => {
+        const college = log.profiles.college ?? log.allocations.colleges;
+        return [
+          new Date(log.download_time).toLocaleString(),
+          log.allocations.papers.title,
+          log.allocations.papers.subject,
+          log.allocations.exam_date,
+          log.profiles.full_name,
+          log.profiles.email,
+          college?.name ?? '',
+          college?.code ?? '',
+          log.ip_address ?? '',
+        ];
+      }),
+    ]);
+  };
+
   if (loading) {
-    return <div className="flex items-center justify-center h-64">Loading...</div>;
+    return <PageSkeleton />;
   }
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Download Logs</h1>
-        <p className="text-muted-foreground">Track all paper downloads across the system</p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1>Download Logs</h1>
+          <p className="text-muted-foreground">Track all paper downloads across the system</p>
+        </div>
+        <Button variant="outline" disabled={logs.length === 0} onClick={exportCsv}>
+          <Download className="mr-2 h-4 w-4" />
+          Export CSV
+        </Button>
       </div>
 
-      <div className="grid gap-4">
+      <div className="stagger grid gap-4">
         {logs.length === 0 ? (
           <Card>
             <CardContent className="flex items-center justify-center h-64">

@@ -1,7 +1,6 @@
 import { useAuth } from '@/hooks/useAuth';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,78 +9,80 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { LogOut, User } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { CalendarDays, ChevronDown, LogOut, User } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { BrandMark } from './Brand';
+import { titleForPath } from './navigation';
+
+const todayLabel = () =>
+  new Date().toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
 
 export function DashboardHeader() {
   const { profile, signOut } = useAuth();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const pageTitle = titleForPath(pathname, profile?.role);
 
   const handleSignOut = async () => {
     await signOut();
     navigate('/auth');
   };
 
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(n => n[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
-  };
+  const initials = (profile?.full_name ?? 'U')
+    .split(' ')
+    .map((n: string) => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
 
   return (
-    <header className="h-16 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 animate-fade-in-down">
-      <div className="flex h-full items-center justify-between px-6">
-        <div className="flex items-center gap-4">
-          <SidebarTrigger className="h-8 w-8 hover-scale transition-transform" />
-          <div className="animate-fade-in">
-            <h1 className="text-lg font-semibold">
-              {profile?.role === 'chairperson' ? 'Chairperson Dashboard' : 'College Admin Dashboard'}
-            </h1>
+    <header className="sticky top-0 z-20 border-b bg-card/90 pt-[env(safe-area-inset-top)] backdrop-blur-md">
+      <div className="flex h-14 items-center justify-between gap-3 px-4 md:h-16 md:px-8">
+        <div className="flex min-w-0 items-center gap-3">
+          <SidebarTrigger className="hidden h-9 w-9 shrink-0 rounded-lg border text-primary hover:bg-secondary md:inline-flex" />
+          {/* On phones the menu lives in the bottom tab bar; show brand + page name here */}
+          <BrandMark size="sm" className="md:hidden" />
+          <p className="truncate text-base font-bold text-primary md:hidden">{pageTitle}</p>
+          <div className="hidden min-w-0 items-center gap-2 rounded-lg bg-secondary px-3 py-1.5 text-sm font-medium text-primary md:flex">
+            <CalendarDays className="h-4 w-4 shrink-0" />
+            <span className="truncate">{todayLabel()}</span>
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-8 w-8 rounded-full hover-scale transition-all hover-glow">
-                <Avatar className="h-8 w-8 animate-scale-in">
-                  <AvatarFallback className="bg-primary text-primary-foreground">
-                    {profile?.full_name ? getInitials(profile.full_name) : 'U'}
-                  </AvatarFallback>
-                </Avatar>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56 animate-scale-in bg-popover/95 backdrop-blur-sm text-popover-foreground border border-border shadow-xl z-[100]" align="end" forceMount>
-              <DropdownMenuLabel className="font-normal text-popover-foreground">
-                <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none text-popover-foreground">{profile?.full_name}</p>
-                  <p className="text-xs leading-none text-muted-foreground">
-                    {profile?.email}
-                  </p>
-                  <p className="text-xs leading-none text-muted-foreground capitalize">
-                    {profile?.role?.replace('_', ' ')}
-                  </p>
-                </div>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem 
-                onClick={() => navigate('/dashboard/profile')}
-                className="cursor-pointer transition-colors hover:bg-accent hover:text-accent-foreground text-popover-foreground"
-              >
-                <User className="mr-2 h-4 w-4" />
-                <span>Profile</span>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer transition-colors hover:bg-destructive hover:text-destructive-foreground text-popover-foreground">
-                <LogOut className="mr-2 h-4 w-4" />
-                <span>Log out</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="h-11 gap-2.5 rounded-xl px-2">
+              <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-xs font-bold text-gold-500">
+                {initials}
+              </span>
+              <span className="hidden text-left leading-tight sm:block">
+                <span className="block max-w-[160px] truncate text-sm font-semibold">{profile?.full_name}</span>
+                <span className="block text-xs font-normal text-muted-foreground">
+                  {profile?.role === 'chairperson' ? 'Chairperson' : 'College Admin'}
+                </span>
+              </span>
+              <ChevronDown className="h-4 w-4 text-muted-foreground" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-64 rounded-xl" align="end">
+            <DropdownMenuLabel className="font-normal">
+              <p className="text-sm font-semibold">{profile?.full_name}</p>
+              <p className="truncate text-xs text-muted-foreground">{profile?.email}</p>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => navigate('/dashboard/profile')} className="cursor-pointer py-2.5">
+              <User className="mr-2 h-4 w-4" />
+              My profile
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={handleSignOut}
+              className="cursor-pointer py-2.5 text-destructive focus:bg-destructive/10 focus:text-destructive"
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              Sign out
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </header>
   );

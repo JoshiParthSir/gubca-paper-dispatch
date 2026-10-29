@@ -2,14 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* Design system: academic navy + university gold (EduMark family).
+   Navy carries structure and primary actions; gold marks the brand,
+   key calls to action and active states. All colors are HSL. */
 
 @layer base {
   :root {
-    --background: 210 40% 98%;
-    --foreground: 222 47% 11%;
+    --background: 210 40% 98%;   /* slate-50 */
+    --foreground: 222 47% 11%;   /* slate-900 */
 
     --card: 0 0% 100%;
     --card-foreground: 222 47% 11%;
@@ -17,104 +17,97 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
 
-    --primary: 262 83% 58%;
+    /* Academic blue #003366 */
+    --primary: 210 100% 20%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 280 89% 64%;
-    --secondary-foreground: 0 0% 100%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 210 100% 20%;
 
     --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
+    --muted-foreground: 215 16% 42%;
 
-    --accent: 340 75% 55%;
-    --accent-foreground: 0 0% 100%;
+    /* Hover/selection tint used by shared components; gold is applied
+       explicitly via the gold-* utilities so menus never flash yellow. */
+    --accent: 210 60% 95%;
+    --accent-foreground: 210 100% 20%;
 
-    --destructive: 0 84% 60%;
+    --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 142 71% 45%;
+    --success: 152 60% 34%;
     --success-foreground: 0 0% 100%;
 
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 100%;
+    --warning: 38 100% 45%;
+    --warning-foreground: 210 100% 13%;
 
-    --info: 199 89% 48%;
+    --info: 212 100% 25%;
     --info-foreground: 0 0% 100%;
 
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 262 83% 58%;
+    --border: 214 32% 91%;       /* slate-200 */
+    --input: 214 28% 86%;
+    --ring: 210 100% 30%;
 
     --radius: 0.75rem;
 
-    --sidebar-background: 262 83% 58%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 280 89% 64%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 270 70% 55%;
-    --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 260 50% 65%;
-    --sidebar-ring: 280 89% 64%;
+    /* Brand ramp used for hero panels and the sidebar */
+    --navy-950: 210 100% 10%;
+    --navy-900: 210 100% 13%;    /* #002244 */
+    --navy-800: 210 100% 20%;    /* #003366 */
+    --navy-700: 210 100% 25%;    /* #004080 */
+    --gold-500: 42 98% 53%;      /* #fdb913 */
+    --gold-600: 41 100% 45%;     /* #e5a000 */
 
-    --chart-1: 262 83% 58%;
-    --chart-2: 280 89% 64%;
-    --chart-3: 142 71% 45%;
-    --chart-4: 38 92% 50%;
-    --chart-5: 199 89% 48%;
+    --sidebar-background: 210 100% 13%;
+    --sidebar-foreground: 210 30% 82%;
+    --sidebar-primary: 42 98% 53%;
+    --sidebar-primary-foreground: 210 100% 13%;
+    --sidebar-accent: 210 80% 20%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 210 60% 20%;
+    --sidebar-ring: 42 98% 53%;
+
+    --chart-1: 210 100% 20%;
+    --chart-2: 42 98% 53%;
+    --chart-3: 152 60% 34%;
+    --chart-4: 210 100% 40%;
+    --chart-5: 215 16% 47%;
   }
 
   .dark {
-    --background: 222 47% 11%;
-    --foreground: 210 40% 98%;
-
-    --card: 217 33% 17%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 217 33% 17%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 262 83% 58%;
-    --primary-foreground: 0 0% 100%;
-
-    --secondary: 280 89% 64%;
-    --secondary-foreground: 0 0% 100%;
-
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
-
-    --accent: 340 75% 55%;
-    --accent-foreground: 0 0% 100%;
-
-    --destructive: 0 63% 31%;
-    --destructive-foreground: 210 40% 98%;
-
-    --success: 142 71% 45%;
+    --background: 210 100% 7%;
+    --foreground: 210 40% 96%;
+    --card: 210 80% 11%;
+    --card-foreground: 210 40% 96%;
+    --popover: 210 80% 11%;
+    --popover-foreground: 210 40% 96%;
+    --primary: 42 98% 53%;
+    --primary-foreground: 210 100% 13%;
+    --secondary: 210 60% 16%;
+    --secondary-foreground: 210 40% 96%;
+    --muted: 210 60% 14%;
+    --muted-foreground: 215 20% 68%;
+    --accent: 210 60% 16%;
+    --accent-foreground: 210 40% 96%;
+    --destructive: 0 70% 55%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 152 50% 45%;
     --success-foreground: 0 0% 100%;
-
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 100%;
-
-    --info: 199 89% 48%;
+    --warning: 38 100% 55%;
+    --warning-foreground: 210 100% 13%;
+    --info: 210 90% 60%;
     --info-foreground: 0 0% 100%;
-
-    --border: 217 33% 17%;
-    --input: 217 33% 17%;
-    --ring: 262 83% 58%;
-
-    --sidebar-background: 222 47% 11%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 262 83% 58%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 217 33% 20%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 217 33% 17%;
-    --sidebar-ring: 262 83% 58%;
-
-    --chart-1: 262 83% 58%;
-    --chart-2: 280 89% 64%;
-    --chart-3: 142 71% 45%;
-    --chart-4: 38 92% 50%;
-    --chart-5: 199 89% 48%;
+    --border: 210 50% 18%;
+    --input: 210 50% 22%;
+    --ring: 42 98% 53%;
+    --sidebar-background: 210 100% 8%;
+    --sidebar-foreground: 210 30% 80%;
+    --sidebar-primary: 42 98% 53%;
+    --sidebar-primary-foreground: 210 100% 13%;
+    --sidebar-accent: 210 70% 16%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 210 50% 16%;
+    --sidebar-ring: 42 98% 53%;
   }
 }
 
@@ -123,46 +116,298 @@ All colors MUST be HSL.
     @apply border-border;
   }
 
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-tap-highlight-color: transparent;
+  }
+
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans;
+    font-feature-settings: "cv11", "ss01", "ss03";
+  }
+
+  h1, h2, h3 {
+    @apply tracking-tight;
+  }
+
+  /* Page titles inside the dashboard */
+  main h1 {
+    @apply text-2xl font-bold text-foreground sm:text-3xl;
+    letter-spacing: -0.025em;
+  }
+
+  ::selection {
+    background: hsl(var(--gold-500) / 0.35);
+  }
+
+  /* Comfortable tap targets on touch screens */
+  @media (pointer: coarse) {
+    input, select, textarea {
+      font-size: 16px; /* stops iOS zooming into focused fields */
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer components {
+  /* Deep navy brand surface with a soft light source, as on EduMark */
+  .surface-navy {
+    background:
+      radial-gradient(1200px 600px at 15% -10%, hsl(var(--navy-700) / 0.9), transparent 60%),
+      radial-gradient(900px 500px at 110% 110%, hsl(var(--navy-950)), transparent 60%),
+      hsl(var(--navy-800));
+    color: hsl(0 0% 100%);
+  }
+
+  /* Translucent card for use on navy surfaces */
+  .glass {
+    background: hsl(0 0% 100% / 0.07);
+    border: 1px solid hsl(0 0% 100% / 0.14);
+    backdrop-filter: blur(8px);
+  }
+
+  .gold-tile {
+    background: linear-gradient(180deg, hsl(var(--gold-500)), hsl(var(--gold-600)));
+    color: hsl(var(--navy-900));
+    box-shadow: 0 8px 20px -8px hsl(var(--gold-600) / 0.6), inset 0 1px 0 hsl(0 0% 100% / 0.35);
+  }
+
+  .btn-gold {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-5 font-semibold transition-all;
+    background: linear-gradient(180deg, hsl(var(--gold-500)), hsl(var(--gold-600)));
+    color: hsl(var(--navy-900));
+    box-shadow: 0 10px 24px -10px hsl(var(--gold-600) / 0.8), inset 0 1px 0 hsl(0 0% 100% / 0.35);
+  }
+
+  .btn-gold:hover {
+    filter: brightness(1.04);
+    transform: translateY(-1px);
+  }
+
+  .card-elevated {
+    @apply rounded-xl border bg-card;
+    box-shadow: 0 1px 2px hsl(222 47% 11% / 0.04), 0 4px 16px -6px hsl(222 47% 11% / 0.08);
   }
 }
 
 @layer utilities {
+  /* Legacy effect classes from earlier markup, kept subtle */
   .hover-lift {
-    @apply transition-all duration-300 hover:-translate-y-1 hover:shadow-lg;
+    @apply transition-shadow duration-200;
   }
-  
-  .hover-scale {
-    @apply transition-transform duration-300 hover:scale-105;
+
+  .hover-lift:hover {
+    box-shadow: 0 10px 28px -12px hsl(222 47% 11% / 0.18);
   }
-  
+
+  .hover-scale,
   .hover-glow {
-    @apply transition-shadow duration-300;
+    @apply transition-colors duration-150;
   }
-  
-  .hover-glow:hover {
-    box-shadow: 0 0 20px hsl(var(--primary) / 0.5);
-  }
-  
+
   .card-gradient {
-    background: linear-gradient(135deg, hsl(var(--card)) 0%, hsl(var(--primary) / 0.05) 100%);
-    border: 1px solid hsl(var(--primary) / 0.2);
-    transition: all 0.3s ease;
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--radius);
+    box-shadow: 0 1px 2px hsl(222 47% 11% / 0.04), 0 4px 16px -6px hsl(222 47% 11% / 0.08);
+    transition: box-shadow 200ms ease, border-color 200ms ease;
   }
-  
+
   .card-gradient:hover {
-    border-color: hsl(var(--primary) / 0.4);
-    box-shadow: 0 8px 24px -8px hsl(var(--primary) / 0.3);
+    border-color: hsl(var(--primary) / 0.25);
+    box-shadow: 0 10px 28px -12px hsl(222 47% 11% / 0.18);
   }
-  
-  .shimmer-effect {
-    background: linear-gradient(
-      90deg,
-      transparent 0%,
-      rgba(255, 255, 255, 0.1) 50%,
-      transparent 100%
-    );
-    background-size: 200% 100%;
+
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .eyebrow {
+    @apply text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground;
+  }
+
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Motion: one easing curve, short distances, nothing that loops in   */
+/* the working UI. Disabled for users who prefer reduced motion.      */
+/* ------------------------------------------------------------------ */
+@layer utilities {
+  .animate-page-in {
+    animation: page-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  /* Children enter one after another */
+  .stagger > * {
+    animation: rise-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .stagger > *:nth-child(1) { animation-delay: 0.03s; }
+  .stagger > *:nth-child(2) { animation-delay: 0.07s; }
+  .stagger > *:nth-child(3) { animation-delay: 0.11s; }
+  .stagger > *:nth-child(4) { animation-delay: 0.15s; }
+  .stagger > *:nth-child(5) { animation-delay: 0.19s; }
+  .stagger > *:nth-child(6) { animation-delay: 0.23s; }
+  .stagger > *:nth-child(7) { animation-delay: 0.27s; }
+  .stagger > *:nth-child(8) { animation-delay: 0.31s; }
+  .stagger > *:nth-child(9) { animation-delay: 0.35s; }
+  .stagger > *:nth-child(n + 10) { animation-delay: 0.39s; }
+
+  /* Scroll reveal (landing page); toggled by useReveal() */
+  .reveal {
+    opacity: 0;
+    transform: translateY(28px);
+    transition:
+      opacity 0.9s cubic-bezier(0.22, 1, 0.36, 1),
+      transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+    transition-delay: var(--reveal-delay, 0s);
+  }
+  .reveal.is-visible {
+    opacity: 1;
+    transform: none;
+  }
+
+  .animate-float {
+    animation: float-y 7s ease-in-out infinite;
+  }
+  .animate-drift {
+    animation: drift 18s ease-in-out infinite;
+  }
+  .animate-draw {
+    animation: draw-x 1s 0.6s cubic-bezier(0.65, 0, 0.35, 1) both;
+    transform-origin: left;
+  }
+  .animate-ping-slow {
+    animation: ping-slow 2.4s cubic-bezier(0, 0, 0.2, 1) infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .reveal {
+      opacity: 1;
+      transform: none;
+    }
+  }
+}
+
+@keyframes page-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(16px) scale(0.985); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes float-y {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+@keyframes drift {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(30px, -20px) scale(1.08); }
+}
+@keyframes draw-x {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+@keyframes ping-slow {
+  0% { transform: scale(1); opacity: 0.7; }
+  80%, 100% { transform: scale(2.2); opacity: 0; }
+}
+
+/* ------------------------------------------------------------------ */
+/* Navigation feel: smooth scrolling, arrival highlight, button press */
+/* ------------------------------------------------------------------ */
+html {
+  scroll-behavior: smooth; /* fallback for any in-page link not using smoothScrollTo */
+  scroll-padding-top: 80px; /* keep targets clear of the fixed navbar */
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* When a section is reached from a link, its heading gets a gold underline
+   that sweeps in and fades away. */
+.section-arrive .text-center > h2 {
+  /* keep centred headings centred while they hug their text */
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.section-arrive h2 {
+  /* hug the text so the underline matches the heading width */
+  width: fit-content;
+  background-image: linear-gradient(hsl(var(--gold-500)), hsl(var(--gold-500)));
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  animation: arrive-underline 1.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes arrive-underline {
+  0% { background-size: 0% 3px; }
+  35% { background-size: 100% 3px; }
+  75% { background-size: 100% 3px; opacity: 1; }
+  100% { background-size: 100% 0px; }
+}
+
+.btn-gold:active {
+  transform: translateY(0) scale(0.97);
+  filter: brightness(0.97);
+}
+
+/* Tactile press for plain links styled as buttons */
+.press {
+  transition: transform 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+}
+.press:active {
+  transform: scale(0.97);
+}
+
+/* Long-form text on About and legal pages */
+@layer components {
+  .legal-prose h2 {
+    @apply mb-4 text-xl font-bold text-primary sm:text-2xl;
+  }
+  .legal-prose h3 {
+    @apply mb-2 mt-6 text-base font-semibold text-foreground;
+  }
+  .legal-prose p {
+    @apply mb-4 leading-relaxed text-foreground/85;
+  }
+  .legal-prose ul {
+    @apply mb-4 space-y-2 pl-0;
+  }
+  .legal-prose ul > li {
+    @apply relative pl-6 leading-relaxed text-foreground/85;
+  }
+  .legal-prose ul > li::before {
+    content: "";
+    @apply absolute left-1 top-[0.6em] h-1.5 w-1.5 rounded-full bg-gold-500;
+  }
+  .legal-prose a {
+    @apply font-medium text-primary underline decoration-gold-500 decoration-2 underline-offset-4 hover:text-navy-700;
+  }
+  .legal-prose strong {
+    @apply font-semibold text-foreground;
+  }
+  .legal-prose table {
+    @apply mb-4 w-full overflow-hidden rounded-xl border text-sm;
+  }
+  .legal-prose th {
+    @apply bg-secondary px-4 py-2.5 text-left font-semibold text-primary;
+  }
+  .legal-prose td {
+    @apply border-t px-4 py-2.5 align-top text-foreground/85;
   }
 }

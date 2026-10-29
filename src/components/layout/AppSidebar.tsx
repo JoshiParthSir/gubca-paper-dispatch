@@ -1,129 +1,120 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
+  SidebarHeader,
   SidebarMenu,
   SidebarMenuItem,
   useSidebar,
 } from '@/components/ui/sidebar';
-import {
-  GraduationCap,
-  Building2,
-  Users,
-  FileText,
-  Calendar,
-  Download,
-  BarChart3,
-  Settings,
-  UserCog,
-  User,
-} from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { X } from 'lucide-react';
+import { BrandMark, Wordmark } from './Brand';
+import { navFor } from './navigation';
 
-const chairpersonItems = [
-  { title: 'Dashboard', url: '/dashboard', icon: BarChart3 },
-  { title: 'Colleges', url: '/dashboard/colleges', icon: Building2 },
-  { title: 'College Admins', url: '/dashboard/college-admins', icon: UserCog },
-  { title: 'Batches', url: '/dashboard/batches', icon: Users },
-  { title: 'Papers', url: '/dashboard/papers', icon: FileText },
-  { title: 'Allocations', url: '/dashboard/allocations', icon: Calendar },
-  { title: 'Download Logs', url: '/dashboard/logs', icon: BarChart3 },
-];
-
-const collegeAdminItems = [
-  { title: 'Dashboard', url: '/dashboard', icon: BarChart3 },
-  { title: 'Scheduled Papers', url: '/dashboard/scheduled', icon: Calendar },
-  { title: 'Downloads', url: '/dashboard/downloads', icon: Download },
-  { title: 'Profile', url: '/dashboard/profile', icon: User },
-];
+// Collapsed (icon) mode: the sidebar is 4.5rem wide with 0.75rem padding,
+// leaving a 3rem column. Every row keeps its icon at the same left offset in
+// both states, and labels fade instead of popping, so collapsing is smooth.
+const fadeWhenCollapsed =
+  'whitespace-nowrap transition-[opacity,transform] duration-200 group-data-[collapsible=icon]:pointer-events-none group-data-[collapsible=icon]:-translate-x-1 group-data-[collapsible=icon]:opacity-0';
 
 export function AppSidebar() {
   const { profile } = useAuth();
-  const { open } = useSidebar();
+  const { pathname } = useLocation();
+  const { state, isMobile, setOpenMobile } = useSidebar();
+  const collapsed = state === 'collapsed' && !isMobile;
+  const isChair = profile?.role === 'chairperson';
+  const { groups } = navFor(profile?.role);
 
-  const items = profile?.role === 'chairperson' ? chairpersonItems : collegeAdminItems;
+  const initials = (profile?.full_name ?? 'U')
+    .split(' ')
+    .map((n: string) => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
 
   return (
-    <Sidebar
-      className={open ? 'w-60' : 'w-14'}
-      collapsible="icon"
-    >
-      <SidebarContent>
-        {/* App Logo and Header */}
-        <div className="p-4 border-b border-sidebar-border animate-fade-in">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-sidebar-primary rounded-lg flex items-center justify-center animate-bounce-in hover-scale transition-all">
-              <GraduationCap className="h-4 w-4 text-sidebar-primary-foreground" />
-            </div>
-            {open && (
-              <div className="animate-fade-in-left flex-1">
-                <h1 className="font-semibold text-sidebar-foreground">Exam System</h1>
-                <p className="text-xs text-sidebar-foreground/70">
-                  {profile?.role === 'chairperson' ? 'Chairperson' : 'College Admin'}
-                </p>
-              </div>
-            )}
-          </div>
+    <Sidebar collapsible="icon" className="border-r-0">
+      <SidebarHeader className="px-3 pb-3 pt-4">
+        <div className="flex h-10 items-center gap-3 overflow-hidden pl-2">
+          <BrandMark size="sm" />
+          <Wordmark onDark className={`text-[17px] ${fadeWhenCollapsed}`} />
+          {isMobile && (
+            <button
+              onClick={() => setOpenMobile(false)}
+              className="ml-auto flex h-9 w-9 items-center justify-center rounded-lg text-sidebar-foreground hover:bg-sidebar-accent hover:text-white"
+              aria-label="Close menu"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          )}
         </div>
+      </SidebarHeader>
 
-        <SidebarGroup>
-          <SidebarGroupLabel>Main Navigation</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {items.map((item, index) => (
-                <SidebarMenuItem 
-                  key={item.title}
-                  className="animate-fade-in-up"
-                  style={{ animationDelay: `${index * 50}ms` }}
-                >
-                  <NavLink 
-                    to={item.url} 
-                    end 
-                    className={({ isActive }) =>
-                      `flex items-center gap-2 rounded-md px-3 py-2 transition-colors ${
-                        isActive 
-                          ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium' 
-                          : 'hover:bg-sidebar-accent/50'
-                      }`
-                    }
-                  >
-                    <item.icon className="h-4 w-4 transition-transform hover:scale-110" />
-                    {open && <span>{item.title}</span>}
-                  </NavLink>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        {profile?.role === 'chairperson' && (
-          <SidebarGroup>
-            <SidebarGroupLabel>Settings</SidebarGroupLabel>
+      <SidebarContent className="gap-0 px-3">
+        {groups.map((group, gi) => (
+          <SidebarGroup key={group.label} className="px-0 py-1.5">
+            <div className="relative flex h-7 items-center px-3">
+              <span
+                className={`text-[10.5px] font-semibold uppercase tracking-[0.1em] text-sidebar-foreground/50 ${fadeWhenCollapsed}`}
+              >
+                {group.label}
+              </span>
+              {gi > 0 && (
+                <span className="absolute inset-x-2 top-1/2 h-px bg-sidebar-border opacity-0 transition-opacity duration-200 group-data-[collapsible=icon]:opacity-100" />
+              )}
+            </div>
             <SidebarGroupContent>
-              <SidebarMenu>
-                <SidebarMenuItem className="animate-fade-in-up" style={{ animationDelay: '400ms' }}>
-                  <NavLink 
-                    to="/dashboard/settings" 
-                    className={({ isActive }) =>
-                      `flex items-center gap-2 rounded-md px-3 py-2 transition-colors ${
-                        isActive 
-                          ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium' 
-                          : 'hover:bg-sidebar-accent/50'
-                      }`
-                    }
-                  >
-                    <Settings className="h-4 w-4 transition-transform hover:rotate-90 hover:scale-110" />
-                    {open && <span>Settings</span>}
-                  </NavLink>
-                </SidebarMenuItem>
+              <SidebarMenu className="gap-1">
+                {group.items.map((item) => (
+                  <SidebarMenuItem key={item.url}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        {/* Plain string className: the tooltip trigger (Radix Slot) cannot merge
+                            NavLink's function form and would stringify it. */}
+                        <NavLink
+                          to={item.url}
+                          end
+                          onClick={() => isMobile && setOpenMobile(false)}
+                          aria-current={pathname === item.url ? 'page' : undefined}
+                          className={[
+                            'relative flex h-11 items-center gap-3 overflow-hidden rounded-xl pl-[15px] pr-3 text-sm font-medium transition-colors duration-150',
+                            pathname === item.url
+                              ? 'bg-sidebar-primary text-sidebar-primary-foreground shadow-[0_8px_20px_-10px_hsl(var(--gold-600))]'
+                              : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+                          ].join(' ')}
+                        >
+                          <item.icon className="h-[18px] w-[18px] shrink-0" strokeWidth={2} />
+                          <span className={fadeWhenCollapsed}>{item.title}</span>
+                        </NavLink>
+                      </TooltipTrigger>
+                      <TooltipContent side="right" sideOffset={10} hidden={!collapsed} className="font-medium">
+                        {item.title}
+                      </TooltipContent>
+                    </Tooltip>
+                  </SidebarMenuItem>
+                ))}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
-        )}
+        ))}
       </SidebarContent>
+
+      <SidebarFooter className="p-3">
+        <div className="flex items-center gap-3 overflow-hidden rounded-xl bg-sidebar-accent p-2">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gold-500 text-xs font-bold text-navy-900">
+            {initials}
+          </span>
+          <div className={`min-w-0 leading-tight ${fadeWhenCollapsed}`}>
+            <p className="truncate text-sm font-semibold text-white">{profile?.full_name}</p>
+            <p className="truncate text-xs text-sidebar-foreground/70">{isChair ? 'Chairperson' : 'College Admin'}</p>
+          </div>
+        </div>
+      </SidebarFooter>
     </Sidebar>
   );
 }

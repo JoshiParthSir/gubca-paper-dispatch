@@ -1,1 +1,20 @@
-project_id = "iozqiexirsrjiwjwjpbb"
+project_id = "wjmtfmnrygsxriqdmnmj"
+
+# JWTs are verified inside each function (see functions/_shared/utils.ts).
+# Gateway verification is disabled because it rejects tokens signed with the
+# newer asymmetric JWT signing keys, which surfaces as a generic
+# "non-2xx status code" error in the app.
+[functions.create-college-admin]
+verify_jwt = false
+
+[functions.update-college-admin]
+verify_jwt = false
+
+[functions.reset-admin-password]
+verify_jwt = false
+
+[functions.delete-college-admin]
+verify_jwt = false
+
+[functions.cleanup-expired-papers]
+verify_jwt = false

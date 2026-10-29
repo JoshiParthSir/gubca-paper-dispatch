@@ -197,13 +197,13 @@ export default function Profile() {
   }
 
   return (
-    <div className="container mx-auto py-8 px-4 max-w-4xl">
+    <div className="w-full">
       <div className="mb-8">
-        <h1 className="text-4xl font-bold mb-2">Profile Settings</h1>
+        <h1 className="mb-2">Profile Settings</h1>
         <p className="text-muted-foreground">Manage your account information and security settings</p>
       </div>
 
-      <div className="grid gap-6">
+      <div className="grid items-start gap-6 xl:grid-cols-2">
         {/* Profile Information Card */}
         <Card>
           <CardHeader>
