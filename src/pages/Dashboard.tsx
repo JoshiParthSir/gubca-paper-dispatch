@@ -17,6 +17,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { serverNow, useServerNow } from '@/hooks/use-server-clock';
 import { examPhase, examWindow } from '@/lib/exam-time';
+import { roleLabel } from '@/lib/roles';
 
 interface DashboardStats {
   colleges: number;
@@ -200,7 +201,7 @@ export default function Dashboard() {
         <div className="relative flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <span className="inline-flex items-center gap-1.5 rounded-full bg-gold-500/15 px-3 py-1 text-xs font-semibold text-gold-500">
-              {isChair ? 'Chairperson' : 'College Admin'}
+              {roleLabel(profile?.role)}
             </span>
             <h1 className="mt-3 !text-2xl !text-white sm:!text-3xl">
               Welcome back{firstName ? `, ${firstName}` : ''}

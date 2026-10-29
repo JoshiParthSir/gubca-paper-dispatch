@@ -13,6 +13,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { Pencil, KeyRound, Loader2, User, Mail, Building2 } from "lucide-react";
+import { roleLabel } from "@/lib/roles";
 
 interface College {
   id: string;
@@ -250,7 +251,7 @@ export default function Profile() {
                 <Label className="text-sm font-medium">Role</Label>
                 <div className="flex items-center gap-2">
                   <div className="flex-1 p-3 bg-muted rounded-md capitalize">
-                    {profile?.role?.replace('_', ' ') || "Not set"}
+                    {roleLabel(profile?.role)}
                   </div>
                 </div>
               </div>

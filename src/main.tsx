@@ -3,6 +3,10 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
+import { installInspectDeterrents } from "./lib/deterrents";
+
+// Live site only, so developers can still debug locally
+if (import.meta.env.PROD) installInspectDeterrents();
 
 // Service worker (PWA install + faster repeat visits) on the live site only.
 // In development it would interfere with hot reloading, so remove any that

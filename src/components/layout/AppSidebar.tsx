@@ -15,6 +15,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { X } from 'lucide-react';
 import { BrandMark, Wordmark } from './Brand';
 import { navFor } from './navigation';
+import { roleLabel } from '@/lib/roles';
 
 // Collapsed (icon) mode: the sidebar is 4.5rem wide with 0.75rem padding,
 // leaving a 3rem column. Every row keeps its icon at the same left offset in
@@ -27,7 +28,6 @@ export function AppSidebar() {
   const { pathname } = useLocation();
   const { state, isMobile, setOpenMobile } = useSidebar();
   const collapsed = state === 'collapsed' && !isMobile;
-  const isChair = profile?.role === 'chairperson';
   const { groups } = navFor(profile?.role);
 
   const initials = (profile?.full_name ?? 'U')
@@ -111,7 +111,7 @@ export function AppSidebar() {
           </span>
           <div className={`min-w-0 leading-tight ${fadeWhenCollapsed}`}>
             <p className="truncate text-sm font-semibold text-white">{profile?.full_name}</p>
-            <p className="truncate text-xs text-sidebar-foreground/70">{isChair ? 'Chairperson' : 'College Admin'}</p>
+            <p className="truncate text-xs text-sidebar-foreground/70">{roleLabel(profile?.role)}</p>
           </div>
         </div>
       </SidebarFooter>

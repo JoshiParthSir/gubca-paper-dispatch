@@ -13,6 +13,7 @@ import { CalendarDays, ChevronDown, LogOut, User } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { BrandMark } from './Brand';
 import { titleForPath } from './navigation';
+import { roleLabel } from '@/lib/roles';
 
 const todayLabel = () =>
   new Date().toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
@@ -58,7 +59,7 @@ export function DashboardHeader() {
               <span className="hidden text-left leading-tight sm:block">
                 <span className="block max-w-[160px] truncate text-sm font-semibold">{profile?.full_name}</span>
                 <span className="block text-xs font-normal text-muted-foreground">
-                  {profile?.role === 'chairperson' ? 'Chairperson' : 'College Admin'}
+                  {roleLabel(profile?.role)}
                 </span>
               </span>
               <ChevronDown className="h-4 w-4 text-muted-foreground" />

@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Settings as SettingsIcon, User, Mail, Shield } from 'lucide-react';
+import { roleLabel } from '@/lib/roles';
 
 export default function Settings() {
   const { profile } = useAuth();
@@ -196,7 +197,7 @@ export default function Settings() {
               <div>
                 <span className="font-medium">Role:</span>{' '}
                 <span className="capitalize text-muted-foreground">
-                  {profile?.role?.replace('_', ' ')}
+                  {roleLabel(profile?.role)}
                 </span>
               </div>
               {profile?.college_id && (

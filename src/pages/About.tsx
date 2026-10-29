@@ -80,7 +80,7 @@ export default function About() {
             <div className="mt-3 grid gap-3 sm:grid-cols-2">
               <div className="rounded-xl bg-primary p-4 text-white">
                 <Building2 className="h-5 w-5 text-gold-500" />
-                <p className="mt-2 font-bold">University</p>
+                <p className="mt-2 font-bold">University / Chairperson</p>
                 <p className="mt-1 text-sm text-white/75">Manages colleges, accounts, papers and the exam schedule.</p>
               </div>
               <div className="rounded-xl border-2 border-gold-500/40 bg-card p-4">

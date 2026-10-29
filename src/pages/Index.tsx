@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useReveal, useScrolled, useScrollSpy } from '@/hooks/use-reveal';
-import { handleAnchorClick } from '@/lib/smooth-scroll';
+import { handleAnchorClick, scrollToSection } from '@/lib/smooth-scroll';
 import { PublicFooter } from '@/components/public/PublicFooter';
 import { BrandMark, Wordmark } from '@/components/layout/Brand';
 import {
@@ -192,6 +192,14 @@ const Index = () => {
   const revealRef = useReveal<HTMLDivElement>();
   const [menuOpen, setMenuOpen] = useState(false);
   const activeSection = useScrollSpy(['features', 'how', 'roles']);
+  const { hash } = useLocation();
+
+  // Links like /#features (e.g. from the footer) glide to that section
+  useEffect(() => {
+    if (!hash) return;
+    const id = window.setTimeout(() => scrollToSection(hash.slice(1)), 80);
+    return () => window.clearTimeout(id);
+  }, [hash]);
 
   useEffect(() => {
     if (user && !loading) {
@@ -435,7 +443,7 @@ const Index = () => {
         <div className="mt-12 grid gap-5 md:grid-cols-2">
           {[
             {
-              title: 'University',
+              title: 'University / Chairperson',
               tag: 'Runs the exam cycle',
               dark: true,
               points: [
