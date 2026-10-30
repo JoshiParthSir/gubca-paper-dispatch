@@ -80,8 +80,7 @@ const sections: LegalSection[] = [
     body: (
       <>
         <p>
-          Paper Dispatch is hosted on Supabase, with data stored in its European Union (Frankfurt) region. The
-          protections include:
+          Paper Dispatch runs on secure, professionally managed cloud infrastructure. The protections include:
         </p>
         <ul>
           <li>Encryption of all data in transit (HTTPS)</li>
@@ -138,11 +137,12 @@ const sections: LegalSection[] = [
         <p>We share information only where needed to run the service or where the law requires it:</p>
         <ul>
           <li>
-            <strong>Supabase</strong> hosts the database, file storage and sign-in service on our behalf.
+            <strong>Service providers</strong> who securely store data and run the sign-in service on our behalf,
+            under obligations to protect it and use it only to provide that service.
           </li>
           <li>
-            <strong>Google Fonts</strong> serves the typefaces used on this site. When pages load, your browser
-            requests font files from Google, which receives your IP address and browser details as part of that
+            <strong>A web font service</strong> that delivers the typefaces used on this site. When pages load, your
+            browser requests font files from it, which shares your IP address and browser details as part of that
             request.
           </li>
           <li>Authorities, where disclosure is required by law or needed to investigate examination malpractice.</li>

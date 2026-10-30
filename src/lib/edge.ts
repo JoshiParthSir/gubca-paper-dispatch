@@ -22,7 +22,7 @@ export async function callEdgeFunction<T = Record<string, unknown>>(
       throw new Error(message);
     }
     if (error instanceof FunctionsFetchError || error instanceof FunctionsRelayError) {
-      throw new Error(`Could not reach the "${name}" service. Check that the edge function is deployed and try again.`);
+      throw new Error('Could not reach the server. Please check your connection and try again.');
     }
     throw new Error(error.message);
   }

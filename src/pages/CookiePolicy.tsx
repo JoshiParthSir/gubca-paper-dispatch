@@ -39,7 +39,7 @@ const sections: LegalSection[] = [
           </thead>
           <tbody>
             <tr>
-              <td className="font-mono text-xs">sb-…-auth-token</td>
+              <td className="font-mono text-xs">auth-token</td>
               <td>Local storage</td>
               <td>Keeps you signed in. Strictly necessary.</td>
               <td>Until you sign out</td>
@@ -67,12 +67,12 @@ const sections: LegalSection[] = [
     body: (
       <ul>
         <li>
-          <strong>Google Fonts:</strong> your browser downloads the site’s typefaces from Google, which receives your
-          IP address and browser details with that request. Paper Dispatch does not ask Google Fonts to set cookies.
+          <strong>Web fonts:</strong> your browser downloads the site’s typefaces from a font service, which receives
+          your IP address and browser details with that request. Paper Dispatch does not ask it to set cookies.
         </li>
         <li>
-          <strong>Supabase:</strong> the app talks to our hosting provider to sign you in and load data. Your sign-in
-          token is stored in local storage as listed above.
+          <strong>Our service providers:</strong> the app connects to our secure servers to sign you in and load data.
+          Your sign-in token is stored in local storage as listed above.
         </li>
       </ul>
     ),

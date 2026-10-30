@@ -28,7 +28,7 @@ export function adminClient(): SupabaseClient {
   const url = Deno.env.get('SUPABASE_URL')
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
   if (!url || !serviceKey) {
-    throw new HttpError(500, 'Server configuration error: missing Supabase environment variables')
+    throw new HttpError(500, 'Server configuration error. Please contact the administrator.')
   }
   return createClient(url, serviceKey, {
     auth: { autoRefreshToken: false, persistSession: false },
