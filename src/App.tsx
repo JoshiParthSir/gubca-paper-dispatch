@@ -14,6 +14,7 @@ import { PageFallback } from "./components/PageFallback";
 import {
   About,
   Allocations,
+  DutyAllocation,
   Batches,
   CollegeAdmins,
   Colleges,
@@ -54,6 +55,7 @@ const App = () => (
             <Route path="batches" element={<Batches />} />
             <Route path="papers" element={<Papers />} />
             <Route path="allocations" element={<Allocations />} />
+            <Route path="duty-allocation" element={<DutyAllocation />} />
             <Route path="scheduled" element={<MyPapers />} />
             <Route path="downloads" element={<MyPapers />} />
             <Route path="logs" element={<DownloadLogs />} />

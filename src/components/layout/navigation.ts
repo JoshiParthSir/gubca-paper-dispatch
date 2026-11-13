@@ -9,6 +9,7 @@ import {
   Settings,
   UserCog,
   User,
+  ClipboardList,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -31,6 +32,7 @@ const admins: NavItem = { title: 'College Admins', short: 'Admins', url: '/dashb
 const batches: NavItem = { title: 'Batches', url: '/dashboard/batches', icon: Layers };
 const papers: NavItem = { title: 'Papers', url: '/dashboard/papers', icon: FileText };
 const allocations: NavItem = { title: 'Allocations', short: 'Exams', url: '/dashboard/allocations', icon: CalendarClock };
+const duty: NavItem = { title: 'Duty Allocation', short: 'Duties', url: '/dashboard/duty-allocation', icon: ClipboardList };
 const logs: NavItem = { title: 'Download Logs', short: 'Logs', url: '/dashboard/logs', icon: ScrollText };
 const settings: NavItem = { title: 'Settings', url: '/dashboard/settings', icon: Settings };
 const scheduled: NavItem = { title: 'Scheduled Papers', short: 'Papers', url: '/dashboard/scheduled', icon: CalendarClock };
@@ -40,7 +42,7 @@ const profile: NavItem = { title: 'Profile', url: '/dashboard/profile', icon: Us
 export const chairpersonNav: NavGroup[] = [
   { label: 'Overview', items: [dashboard] },
   { label: 'Institution', items: [colleges, admins, batches] },
-  { label: 'Examinations', items: [papers, allocations, logs] },
+  { label: 'Examinations', items: [papers, allocations, duty, logs] },
   { label: 'System', items: [settings] },
 ];
 

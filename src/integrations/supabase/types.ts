@@ -205,6 +205,276 @@ export type Database = {
           },
         ]
       }
+      duty_assignments: {
+        Row: {
+          cancel_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          centre_id: string
+          created_at: string
+          created_by: string
+          exam_date: string
+          faculty_id: string
+          id: string
+          replaced_by: string | null
+          seat_role: string
+          session_id: string
+          status: string
+          subject_code: string
+        }
+        Insert: {
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          centre_id: string
+          created_at?: string
+          created_by?: string
+          exam_date: string
+          faculty_id: string
+          id?: string
+          replaced_by?: string | null
+          seat_role: string
+          session_id: string
+          status?: string
+          subject_code: string
+        }
+        Update: {
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          centre_id?: string
+          created_at?: string
+          created_by?: string
+          exam_date?: string
+          faculty_id?: string
+          id?: string
+          replaced_by?: string | null
+          seat_role?: string
+          session_id?: string
+          status?: string
+          subject_code?: string
+        }
+        Relationships: []
+      }
+      duty_college_data: {
+        Row: {
+          code: string
+          college_id: string | null
+          email: string | null
+          full_name: string | null
+          id: string
+          pcs: number | null
+          raw_name: string
+          session_id: string
+          students: number | null
+          submitted_at: string | null
+        }
+        Insert: {
+          code: string
+          college_id?: string | null
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          pcs?: number | null
+          raw_name: string
+          session_id: string
+          students?: number | null
+          submitted_at?: string | null
+        }
+        Update: {
+          code?: string
+          college_id?: string | null
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          pcs?: number | null
+          raw_name?: string
+          session_id?: string
+          students?: number | null
+          submitted_at?: string | null
+        }
+        Relationships: []
+      }
+      duty_faculty: {
+        Row: {
+          college_data_id: string
+          email: string | null
+          id: string
+          is_available: boolean
+          is_senior: boolean
+          is_visiting: boolean
+          name: string
+          name_key: string
+          phone: string | null
+          session_id: string
+          subject_codes: string[]
+          title: string
+        }
+        Insert: {
+          college_data_id: string
+          email?: string | null
+          id?: string
+          is_available?: boolean
+          is_senior?: boolean
+          is_visiting?: boolean
+          name: string
+          name_key: string
+          phone?: string | null
+          session_id: string
+          subject_codes?: string[]
+          title?: string
+        }
+        Update: {
+          college_data_id?: string
+          email?: string | null
+          id?: string
+          is_available?: boolean
+          is_senior?: boolean
+          is_visiting?: boolean
+          name?: string
+          name_key?: string
+          phone?: string | null
+          session_id?: string
+          subject_codes?: string[]
+          title?: string
+        }
+        Relationships: []
+      }
+      duty_letters: {
+        Row: {
+          content: Json
+          faculty_id: string
+          finalised_at: string | null
+          finalised_by: string | null
+          generated_at: string
+          id: string
+          session_id: string
+          updated_at: string
+        }
+        Insert: {
+          content: Json
+          faculty_id: string
+          finalised_at?: string | null
+          finalised_by?: string | null
+          generated_at?: string
+          id?: string
+          session_id: string
+          updated_at?: string
+        }
+        Update: {
+          content?: Json
+          faculty_id?: string
+          finalised_at?: string | null
+          finalised_by?: string | null
+          generated_at?: string
+          id?: string
+          session_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      duty_sessions: {
+        Row: {
+          created_at: string
+          created_by: string
+          exam_month: string | null
+          id: string
+          letter_settings: Json
+          published_at: string | null
+          rules: Json
+          semester_label: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string
+          exam_month?: string | null
+          id?: string
+          letter_settings?: Json
+          published_at?: string | null
+          rules?: Json
+          semester_label?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          exam_month?: string | null
+          id?: string
+          letter_settings?: Json
+          published_at?: string | null
+          rules?: Json
+          semester_label?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      duty_subjects: {
+        Row: {
+          code: string
+          id: string
+          is_practical: boolean
+          name: string
+          session_id: string
+        }
+        Insert: {
+          code: string
+          id?: string
+          is_practical?: boolean
+          name: string
+          session_id: string
+        }
+        Update: {
+          code?: string
+          id?: string
+          is_practical?: boolean
+          name?: string
+          session_id?: string
+        }
+        Relationships: []
+      }
+      duty_timetable: {
+        Row: {
+          batch: string | null
+          centre_id: string
+          exam_date: string
+          id: string
+          seat_from: string | null
+          seat_to: string | null
+          session_id: string
+          students: number | null
+          subject_code: string
+        }
+        Insert: {
+          batch?: string | null
+          centre_id: string
+          exam_date: string
+          id?: string
+          seat_from?: string | null
+          seat_to?: string | null
+          session_id: string
+          students?: number | null
+          subject_code: string
+        }
+        Update: {
+          batch?: string | null
+          centre_id?: string
+          exam_date?: string
+          id?: string
+          seat_from?: string | null
+          seat_to?: string | null
+          session_id?: string
+          students?: number | null
+          subject_code?: string
+        }
+        Relationships: []
+      }
       papers: {
         Row: {
           batch_id: string
@@ -345,6 +615,10 @@ export type Database = {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["user_role"]
       }
+      duty_is_chair: { Args: Record<PropertyKey, never>; Returns: boolean }
+      duty_my_college_rows: { Args: { _session: string }; Returns: string[] }
+      duty_session_published: { Args: { _session: string }; Returns: boolean }
+      duty_visible_assignments: { Args: { _session: string }; Returns: string[] }
       server_now: {
         Args: Record<PropertyKey, never>
         Returns: string
