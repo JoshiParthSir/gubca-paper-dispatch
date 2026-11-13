@@ -21,7 +21,12 @@ export interface NameCellResult {
   warnings: string[];
 }
 
-const SEPARATORS = /\s*(?:,|&|;|\/|\n|\band\b)\s*/i;
+const SEPARATORS = /\s*(?:,|&|;|\/|\+|\||\n|\band\b)\s*/i;
+const TITLE_WORD = String.raw`(?:dr|prof|professor|mr|mrs|ms|miss|shri|smt)\b\.?`;
+/** A title in the middle of a cell starts a new person ("Prof. A Shah Prof. B Mehta"), unless it follows another title ("Prof. Dr. X"). */
+const TITLE_MID = new RegExp(String.raw`(?<!\b${TITLE_WORD})\s+(?=${TITLE_WORD}\s*[a-z])`, 'gi');
+/** List numbering ("1. A Shah 2) B Mehta") starts a new person. */
+const NUMBERING = /(?:^|\s)\d{1,2}\s*[.)]\s*/g;
 const VISITING = /\(\s*(?:visiting|vf|v\.f\.?)\s*\)|\b(?:visiting faculty|visiting)\b\s*$/i;
 const TITLE = /^(?:(dr|prof|professor|mr|mrs|ms|miss|shri|smt)\b\.?\s*)+/i;
 const HONORIFIC_SUFFIX = /\s+(?:ma'?am|madam|mam|sir)\.?$/i;
@@ -92,12 +97,51 @@ export function parseNameCell(cell: unknown): NameCellResult {
     warnings.push(cleanOneName(whole).warning ?? `"${whole}" is not a name, skipped`);
     return { names, warnings };
   }
-  for (const part of String(cell).split(SEPARATORS)) {
+  const marked = whole.replace(NUMBERING, ', ').replace(TITLE_MID, ', ');
+  for (const part of marked.split(SEPARATORS)) {
     const { value, warning } = cleanOneName(part);
     if (warning) warnings.push(warning);
     if (value && !names.some((n) => n.key === value.key)) names.push(value);
   }
   return { names, warnings };
+}
+
+/**
+ * Key for "the same person written another way": word order and initials
+ * are ignored, so "Asha R. Mehta", "Mehta Asha" and "ASHA MEHTA" match.
+ */
+export function personKey(name: string): string {
+  return nameKey(name)
+    .split(' ')
+    .filter((w) => w.length > 1)
+    .sort()
+    .join(' ');
+}
+
+/**
+ * Key to treat faculty records as one person across colleges: their
+ * person key when the name has at least two words, otherwise `fallback`
+ * (a one-word name like "Asha" is too common to match on).
+ */
+export function samePersonKey(name: string, fallback: string): string {
+  const p = personKey(name);
+  return p.includes(' ') ? p : fallback;
+}
+
+/** Optimal string alignment distance (edit distance that counts swaps as 1). */
+export function editDistance(a: string, b: string): number {
+  const d = Array.from({ length: a.length + 1 }, (_, i) => [i, ...Array(b.length).fill(0)]);
+  for (let j = 1; j <= b.length; j++) d[0][j] = j;
+  for (let i = 1; i <= a.length; i++) {
+    for (let j = 1; j <= b.length; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + cost);
+      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) {
+        d[i][j] = Math.min(d[i][j], d[i - 2][j - 2] + 1);
+      }
+    }
+  }
+  return d[a.length][b.length];
 }
 
 /** Key that ignores case, dots, spacing and initials' punctuation. */

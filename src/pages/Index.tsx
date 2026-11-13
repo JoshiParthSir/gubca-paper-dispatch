@@ -10,11 +10,14 @@ import {
   CalendarClock,
   Check,
   CheckCircle2,
+  ClipboardList,
   Clock,
   FileUp,
+  History,
   Lock,
   Menu,
   ScrollText,
+  Send,
   ShieldCheck,
   Timer,
   Trash2,
@@ -61,6 +64,24 @@ const features: { title: string; text: string; icon: LucideIcon; tone: Tone }[] 
     title: 'Bulk Operations',
     text: 'Upload dozens of PDFs in one go and create every college admin from a single spreadsheet.',
     icon: FileUp,
+    tone: 'navy',
+  },
+  {
+    title: 'Examiner Duty Allocation',
+    text: 'Import the college form and practical timetable, then allocate examiners automatically: seniors first, subject teachers only, one duty a day.',
+    icon: ClipboardList,
+    tone: 'slate',
+  },
+  {
+    title: 'Duty Letters, Sent Securely',
+    text: 'Letters in the university format, sent to each college admin individually, by college or all at once. PDFs are never stored.',
+    icon: Send,
+    tone: 'gold',
+  },
+  {
+    title: 'Cancellations on Record',
+    text: 'Cancel a duty for a day or every day; letters update by themselves, and every change and download is logged for export.',
+    icon: History,
     tone: 'navy',
   },
 ];
@@ -371,7 +392,7 @@ const Index = () => {
             Everything for the exam cycle
           </h2>
           <p className="mt-3 text-muted-foreground">
-            Built for universities that dispatch question papers to many affiliated colleges.
+            Built for universities that dispatch question papers and practical examiner duties to many affiliated colleges.
           </p>
         </div>
 
@@ -450,7 +471,8 @@ const Index = () => {
                 'Add colleges, batches and admin logins',
                 'Upload papers individually or in bulk',
                 'Schedule exams for many colleges at once',
-                'See and export every download',
+                'Allocate practical examiner duties and send duty letters',
+                'See and export every download and cancellation',
               ],
             },
             {
@@ -461,6 +483,7 @@ const Index = () => {
                 'Sign in with details from the university',
                 'See the exam schedule for your college',
                 'Download each paper when its window opens',
+                'Receive duty letters and see your faculty\'s duties',
                 'Works on any phone or computer',
               ],
             },

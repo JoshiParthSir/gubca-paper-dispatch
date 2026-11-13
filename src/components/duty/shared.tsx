@@ -7,11 +7,11 @@ export function RankBadge({ senior }: { senior: boolean }) {
     : <Badge variant="secondary">Junior</Badge>;
 }
 
-const TIER_TEXT: Record<PoolTier, string> = { subject: 'Teaches it', practical: 'Other practical', backup: 'Backup' };
+const TIER_TEXT: Record<PoolTier, string> = { subject: 'Teaches it', practical: 'Other practical', other: 'Not teaching' };
 
 export function TierBadge({ tier }: { tier: PoolTier }) {
   return (
-    <Badge variant="outline" className={tier === 'backup' ? 'border-amber-500/60 text-amber-700 dark:text-amber-300' : ''}>
+    <Badge variant="outline" className={tier !== 'subject' ? 'border-amber-500/60 text-amber-700 dark:text-amber-300' : ''}>
       {TIER_TEXT[tier]}
     </Badge>
   );

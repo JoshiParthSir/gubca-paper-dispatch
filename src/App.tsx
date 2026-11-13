@@ -21,6 +21,7 @@ import {
   CookiePolicy,
   Dashboard,
   DownloadLogs,
+  MyDuties,
   MyPapers,
   Papers,
   PrivacyPolicy,
@@ -58,6 +59,7 @@ const App = () => (
             <Route path="duty-allocation" element={<DutyAllocation />} />
             <Route path="scheduled" element={<MyPapers />} />
             <Route path="downloads" element={<MyPapers />} />
+            <Route path="my-duties" element={<MyDuties />} />
             <Route path="logs" element={<DownloadLogs />} />
             <Route path="settings" element={<Settings />} />
             <Route path="profile" element={<Profile />} />

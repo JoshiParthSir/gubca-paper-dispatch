@@ -36,6 +36,7 @@ const duty: NavItem = { title: 'Duty Allocation', short: 'Duties', url: '/dashbo
 const logs: NavItem = { title: 'Download Logs', short: 'Logs', url: '/dashboard/logs', icon: ScrollText };
 const settings: NavItem = { title: 'Settings', url: '/dashboard/settings', icon: Settings };
 const scheduled: NavItem = { title: 'Scheduled Papers', short: 'Papers', url: '/dashboard/scheduled', icon: CalendarClock };
+const myDuties: NavItem = { title: 'My Duties', short: 'Duties', url: '/dashboard/my-duties', icon: ClipboardList };
 const downloads: NavItem = { title: 'Downloads', url: '/dashboard/downloads', icon: Download };
 const profile: NavItem = { title: 'Profile', url: '/dashboard/profile', icon: User };
 
@@ -48,7 +49,7 @@ export const chairpersonNav: NavGroup[] = [
 
 export const collegeAdminNav: NavGroup[] = [
   { label: 'Overview', items: [dashboard] },
-  { label: 'Examinations', items: [scheduled, downloads] },
+  { label: 'Examinations', items: [scheduled, downloads, myDuties] },
   { label: 'Account', items: [profile] },
 ];
 

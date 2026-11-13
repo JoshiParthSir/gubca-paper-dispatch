@@ -75,18 +75,23 @@ export default function About() {
               Every download is logged for the university, and the file is deleted automatically a week after the
               last exam, so confidential papers don’t linger on shared drives or inboxes.
             </p>
+            <p>
+              Since version 2.1 it also allocates practical examiner duties: the chairperson imports the colleges’
+              faculty and the practical timetable, allocates examiners automatically, and sends duty letters in the
+              university format straight to each college admin. Cancellations and letter downloads stay on record.
+            </p>
             <h3>Who uses it</h3>
             </div>
             <div className="mt-3 grid gap-3 sm:grid-cols-2">
               <div className="rounded-xl bg-primary p-4 text-white">
                 <Building2 className="h-5 w-5 text-gold-500" />
                 <p className="mt-2 font-bold">University / Chairperson</p>
-                <p className="mt-1 text-sm text-white/75">Manages colleges, accounts, papers and the exam schedule.</p>
+                <p className="mt-1 text-sm text-white/75">Manages colleges, accounts, papers, the exam schedule and examiner duties.</p>
               </div>
               <div className="rounded-xl border-2 border-gold-500/40 bg-card p-4">
                 <UserCog className="h-5 w-5 text-gold-600" />
                 <p className="mt-2 font-bold text-primary">College Admin</p>
-                <p className="mt-1 text-sm text-muted-foreground">Downloads their college’s papers when each exam opens.</p>
+                <p className="mt-1 text-sm text-muted-foreground">Downloads their college’s papers when each exam opens and receives duty letters.</p>
               </div>
             </div>
           </div>

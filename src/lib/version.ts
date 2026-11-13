@@ -1,6 +1,6 @@
 export const APP_NAME = 'Paper Dispatch';
-export const APP_VERSION = '2.0';
-export const APP_RELEASE_DATE = '28 October 2026';
+export const APP_VERSION = '2.1';
+export const APP_RELEASE_DATE = '13 November 2026';
 export const DEVELOPER = 'Parth D. Joshi';
 
 /** Date shown on the legal pages. Update whenever their content changes. */
@@ -14,6 +14,21 @@ export interface Release {
 }
 
 export const RELEASES: Release[] = [
+  {
+    version: '2.1',
+    date: 'November 2026',
+    title: 'Practical examiner duty allocation',
+    changes: [
+      'Import college data from the Google Form and the practical timetable; college codes are matched automatically',
+      'Automatic duty allocation: seniors first, only faculty who teach the practical, never two duties on one day',
+      'Duty letters in the Gujarat University format, with the chairperson and coordinators entered once',
+      'Send letters to college admins one by one, by college or all together; PDFs are made on the spot and never stored',
+      'Cancel a duty for one day or all days: letters update by themselves and every cancellation is kept on record',
+      'Cancellation record and letter download log, downloadable as Excel or PDF',
+      'Chairperson chooses which colleges see the examiners coming to them',
+      'My Duties page for college admins: their faculty\'s duties and letters in one place',
+    ],
+  },
   {
     version: '2.0',
     date: 'October 2026',

@@ -2,9 +2,9 @@
 // faculty handling each subject) into a clean structure.
 //
 // Every faculty member is kept, whatever subject they teach: the ones who
-// teach the practical subject are preferred, everyone else is backup.
+// teach the practical subject are allocated; everyone else can be picked by hand.
 
-import { cleanCollegeCode, collegeKey, parseNameCell, type CleanName } from './names';
+import { cleanCollegeCode, collegeKey, editDistance, parseNameCell, personKey, type CleanName } from './names';
 
 export interface ParsedSubject {
   code: string;
@@ -153,18 +153,46 @@ export function parseFormResponses(rows: unknown[][]): ParsedForm {
     const code = cleanCollegeCode(rawName);
     if (count > 1) warnings.push({ college: code, message: `${count} responses found; the latest one is used.` });
 
+    // One person teaching several subjects is one faculty record with all
+    // their subjects, so they can never get two duties on the same day.
+    // Names match ignoring word order and initials ("Asha R. Mehta" =
+    // "Mehta Asha"); one-word names only match exactly.
     const byKey = new Map<string, ParsedFaculty>();
+    const matchKey = (n: CleanName) => {
+      const p = personKey(n.name);
+      return p.includes(' ') ? `p:${p}` : `n:${n.key}`;
+    };
     for (const { index, code: subject } of facultyCols) {
       const { names, warnings: w } = parseNameCell(row[index]);
       w.forEach((message) => warnings.push({ college: code, message: `${subject}: ${message}` }));
       for (const n of names) {
-        const existing = byKey.get(n.key);
+        const mk = matchKey(n);
+        const existing = byKey.get(mk);
         if (existing) {
           if (!existing.subjectCodes.includes(subject)) existing.subjectCodes.push(subject);
           existing.isVisiting ||= n.isVisiting;
           if (n.title === 'Dr.') existing.title = 'Dr.';
+          if (existing.key !== n.key) {
+            warnings.push({ college: code, message: `"${existing.name}" and "${n.name}" are taken as the same person.` });
+            // Keep the fuller spelling.
+            if (n.name.length > existing.name.length) Object.assign(existing, { name: n.name, key: n.key });
+          }
         } else {
-          byKey.set(n.key, { ...n, subjectCodes: [subject] });
+          byKey.set(mk, { ...n, subjectCodes: [subject] });
+        }
+      }
+    }
+    // Close spellings ("Asha Mehta" / "Asha Metha") are not merged, only flagged.
+    const people = [...byKey.values()];
+    for (let i = 0; i < people.length; i++) {
+      for (let j = i + 1; j < people.length; j++) {
+        const a = personKey(people[i].name);
+        const b = personKey(people[j].name);
+        if (Math.min(a.length, b.length) >= 8 && editDistance(a, b) <= 2) {
+          warnings.push({
+            college: code,
+            message: `"${people[i].name}" and "${people[j].name}" look like the same person. If so, mark one unavailable in the Faculty tab, or they could get two duties on one day.`,
+          });
         }
       }
     }

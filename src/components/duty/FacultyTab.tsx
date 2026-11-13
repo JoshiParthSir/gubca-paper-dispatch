@@ -6,19 +6,40 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { facultyTier } from '@/lib/duty/pools';
 import { setSeniors, updateFaculty, type DutyFaculty } from '@/lib/duty/store';
 import { Stat } from './shared';
 import { shortCode, useLookups, type TabProps } from './lookups';
 
 const ALL = '__all__';
 
+type Teaching = 'theory' | 'practical' | 'both' | 'none';
+
+function teachingOf(codes: readonly string[], isPractical: (code: string) => boolean): Teaching {
+  const p = codes.some(isPractical);
+  const t = codes.some((c) => !isPractical(c));
+  return p && t ? 'both' : p ? 'practical' : t ? 'theory' : 'none';
+}
+
 export function FacultyTab({ data, reload, onError }: TabProps) {
-  const { college, practicalCodes } = useLookups(data);
+  const { college, subject, practicalCodes } = useLookups(data);
   const [search, setSearch] = useState('');
   const [collegeFilter, setCollegeFilter] = useState(ALL);
-  const [show, setShow] = useState<'all' | 'teaches' | 'backup'>('all');
+  const [show, setShow] = useState<Teaching | 'all' | 'anyPractical'>('all');
   const [local, setLocal] = useState<Record<string, Partial<DutyFaculty>>>({});
+
+  // A practical is a subject code that is in the saved timetable; every
+  // other subject counts as theory.
+  const hasTimetable = practicalCodes.length > 0;
+  const isPractical = useMemo(() => {
+    const set = new Set(practicalCodes);
+    return (code: string) => set.has(code);
+  }, [practicalCodes]);
+
+  const teachingCount = useMemo(() => {
+    const n: Record<Teaching, number> = { theory: 0, practical: 0, both: 0, none: 0 };
+    for (const f of data.faculty) n[teachingOf(f.subject_codes, isPractical)] += 1;
+    return n;
+  }, [data.faculty, isPractical]);
 
   const rows = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -27,14 +48,14 @@ export function FacultyTab({ data, reload, onError }: TabProps) {
       .filter((f) => collegeFilter === ALL || f.college_data_id === collegeFilter)
       .filter((f) => !q || f.name.toLowerCase().includes(q) || college.get(f.college_data_id)?.code.toLowerCase().includes(q))
       .filter((f) => {
-        if (show === 'all') return true;
-        const teaches = practicalCodes.some((p) => facultyTier(f.subject_codes, p, practicalCodes) === 'subject');
-        return show === 'teaches' ? teaches : !teaches;
+        if (show === 'all' || !hasTimetable) return true;
+        const t = teachingOf(f.subject_codes, isPractical);
+        return show === 'anyPractical' ? t === 'practical' || t === 'both' : t === show;
       })
       .sort((a, b) =>
         (college.get(a.college_data_id)?.code ?? '').localeCompare(college.get(b.college_data_id)?.code ?? '')
         || a.name.localeCompare(b.name));
-  }, [data.faculty, local, search, collegeFilter, show, college, practicalCodes]);
+  }, [data.faculty, local, search, collegeFilter, show, college, isPractical, hasTimetable]);
 
   const merged = data.faculty.map((f) => ({ ...f, ...local[f.id] }));
   const seniors = merged.filter((f) => f.is_senior).length;
@@ -44,6 +65,12 @@ export function FacultyTab({ data, reload, onError }: TabProps) {
     setLocal((m) => ({ ...m, [f.id]: { ...m[f.id], ...patch } }));
     try {
       await updateFaculty(f.id, patch);
+      // Refresh the shared data so the Allocate tab and counts see the change.
+      await reload();
+      setLocal((m) => {
+        const { [f.id]: _done, ...rest } = m;
+        return rest;
+      });
     } catch (e) {
       setLocal((m) => ({ ...m, [f.id]: { ...m[f.id], ...Object.fromEntries(Object.keys(patch).map((k) => [k, f[k as keyof DutyFaculty]])) } }));
       onError(e);
@@ -83,9 +110,9 @@ export function FacultyTab({ data, reload, onError }: TabProps) {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <Input placeholder="Search name or college" value={search} onChange={(e) => setSearch(e.target.value)} className="max-w-xs" />
+          <Input placeholder="Search name or college" value={search} onChange={(e) => setSearch(e.target.value)} className="w-full sm:max-w-xs" />
           <Select value={collegeFilter} onValueChange={setCollegeFilter}>
-            <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-full sm:w-[180px]"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value={ALL}>All colleges</SelectItem>
               {data.colleges.filter((c) => data.faculty.some((f) => f.college_data_id === c.id)).map((c) => (
@@ -93,17 +120,22 @@ export function FacultyTab({ data, reload, onError }: TabProps) {
               ))}
             </SelectContent>
           </Select>
-          {practicalCodes.length > 0 && (
+          {hasTimetable ? (
             <Select value={show} onValueChange={(v) => setShow(v as typeof show)}>
-              <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="w-full sm:w-[260px]"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Everyone</SelectItem>
-                <SelectItem value="teaches">Teaches a practical</SelectItem>
-                <SelectItem value="backup">Backup only</SelectItem>
+                <SelectItem value="all">Everyone ({data.faculty.length})</SelectItem>
+                <SelectItem value="anyPractical">Teaches a practical ({teachingCount.practical + teachingCount.both})</SelectItem>
+                <SelectItem value="both">Theory and practical ({teachingCount.both})</SelectItem>
+                <SelectItem value="practical">Practical only ({teachingCount.practical})</SelectItem>
+                <SelectItem value="theory">Theory only ({teachingCount.theory})</SelectItem>
+                {teachingCount.none > 0 && <SelectItem value="none">No subject ({teachingCount.none})</SelectItem>}
               </SelectContent>
             </Select>
+          ) : (
+            <span className="text-sm text-muted-foreground">Save the timetable to see who teaches a practical.</span>
           )}
-          <div className="ml-auto flex gap-2">
+          <div className="grid w-full grid-cols-2 gap-2 sm:ml-auto sm:flex sm:w-auto">
             <Button variant="outline" size="sm" onClick={() => bulkSenior(true)}>Shown → senior</Button>
             <Button variant="outline" size="sm" onClick={() => bulkSenior(false)}>Shown → junior</Button>
           </div>
@@ -131,7 +163,14 @@ export function FacultyTab({ data, reload, onError }: TabProps) {
                   <TableCell>
                     <div className="flex flex-wrap gap-1">
                       {f.subject_codes.map((c) => (
-                        <Badge key={c} variant={practicalCodes.includes(c) ? 'default' : 'outline'} className="font-mono text-[11px]">{shortCode(c)}</Badge>
+                        <Badge
+                          key={c}
+                          variant="outline"
+                          title={`${subject.get(c)?.name ?? c}${isPractical(c) ? ' (practical)' : ' (theory)'}`}
+                          className={`font-mono text-[11px] ${isPractical(c) ? 'border-transparent bg-blue-600 text-white hover:bg-blue-600 dark:bg-blue-500 dark:hover:bg-blue-500' : ''}`}
+                        >
+                          {shortCode(c)}
+                        </Badge>
                       ))}
                     </div>
                   </TableCell>
@@ -146,9 +185,7 @@ export function FacultyTab({ data, reload, onError }: TabProps) {
             </TableBody>
           </Table>
         </div>
-        {practicalCodes.length > 0 && (
-          <p className="text-xs text-muted-foreground">Filled badges are practicals in this timetable.</p>
-        )}
+        <p className="text-xs text-muted-foreground">Blue badges are practicals in the timetable ({practicalCodes.map(shortCode).join(', ') || 'none yet'}); outlined badges are other subjects. Hover a badge for the subject name.</p>
       </CardContent>
     </Card>
   );

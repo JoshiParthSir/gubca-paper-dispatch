@@ -10,7 +10,32 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.17"
+    PostgrestVersion: "14.18"
+  }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
   }
   public: {
     Tables: {
@@ -254,7 +279,36 @@ export type Database = {
           status?: string
           subject_code?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "duty_assignments_centre_id_fkey"
+            columns: ["centre_id"]
+            isOneToOne: false
+            referencedRelation: "duty_college_data"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "duty_assignments_faculty_id_fkey"
+            columns: ["faculty_id"]
+            isOneToOne: false
+            referencedRelation: "duty_faculty"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "duty_assignments_replaced_by_fkey"
+            columns: ["replaced_by"]
+            isOneToOne: false
+            referencedRelation: "duty_assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "duty_assignments_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "duty_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       duty_college_data: {
         Row: {
@@ -293,7 +347,22 @@ export type Database = {
           students?: number | null
           submitted_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "duty_college_data_college_id_fkey"
+            columns: ["college_id"]
+            isOneToOne: false
+            referencedRelation: "colleges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "duty_college_data_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "duty_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       duty_faculty: {
         Row: {
@@ -338,7 +407,22 @@ export type Database = {
           subject_codes?: string[]
           title?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "duty_faculty_college_data_id_fkey"
+            columns: ["college_data_id"]
+            isOneToOne: false
+            referencedRelation: "duty_college_data"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "duty_faculty_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "duty_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       duty_letters: {
         Row: {
@@ -348,6 +432,8 @@ export type Database = {
           finalised_by: string | null
           generated_at: string
           id: string
+          sent_at: string | null
+          sent_by: string | null
           session_id: string
           updated_at: string
         }
@@ -358,6 +444,8 @@ export type Database = {
           finalised_by?: string | null
           generated_at?: string
           id?: string
+          sent_at?: string | null
+          sent_by?: string | null
           session_id: string
           updated_at?: string
         }
@@ -368,10 +456,27 @@ export type Database = {
           finalised_by?: string | null
           generated_at?: string
           id?: string
+          sent_at?: string | null
+          sent_by?: string | null
           session_id?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "duty_letters_faculty_id_fkey"
+            columns: ["faculty_id"]
+            isOneToOne: false
+            referencedRelation: "duty_faculty"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "duty_letters_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "duty_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       duty_sessions: {
         Row: {
@@ -415,6 +520,27 @@ export type Database = {
         }
         Relationships: []
       }
+      duty_settings: {
+        Row: {
+          key: string
+          updated_at: string
+          updated_by: string | null
+          value: Json
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Relationships: []
+      }
       duty_subjects: {
         Row: {
           code: string
@@ -437,7 +563,15 @@ export type Database = {
           name?: string
           session_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "duty_subjects_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "duty_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       duty_timetable: {
         Row: {
@@ -473,7 +607,22 @@ export type Database = {
           students?: number | null
           subject_code?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "duty_timetable_centre_id_fkey"
+            columns: ["centre_id"]
+            isOneToOne: false
+            referencedRelation: "duty_college_data"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "duty_timetable_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "duty_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       papers: {
         Row: {
@@ -501,8 +650,8 @@ export type Database = {
           file_path?: string | null
           file_size?: number | null
           google_drive_link?: string | null
-          purged_at?: string | null
           id?: string
+          purged_at?: string | null
           subject: string
           title: string
           updated_at?: string | null
@@ -517,8 +666,8 @@ export type Database = {
           file_path?: string | null
           file_size?: number | null
           google_drive_link?: string | null
-          purged_at?: string | null
           id?: string
+          purged_at?: string | null
           subject?: string
           title?: string
           updated_at?: string | null
@@ -540,8 +689,8 @@ export type Database = {
           created_at: string | null
           email: string
           full_name: string
-          must_change_password: boolean
           id: string
+          must_change_password: boolean
           role: Database["public"]["Enums"]["user_role"]
           updated_at: string | null
           user_id: string
@@ -551,8 +700,8 @@ export type Database = {
           created_at?: string | null
           email: string
           full_name: string
-          must_change_password?: boolean
           id?: string
+          must_change_password?: boolean
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string | null
           user_id: string
@@ -562,8 +711,8 @@ export type Database = {
           created_at?: string | null
           email?: string
           full_name?: string
-          must_change_password?: boolean
           id?: string
+          must_change_password?: boolean
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string | null
           user_id?: string
@@ -604,6 +753,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_access_paper_file: { Args: { _path: string }; Returns: boolean }
       check_user_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -611,22 +761,29 @@ export type Database = {
         }
         Returns: boolean
       }
+      duty_cancel_and_replace: {
+        Args: { _assignment: string; _new_faculty: string; _reason: string }
+        Returns: string
+      }
+      duty_is_chair: { Args: never; Returns: boolean }
+      duty_my_college_rows: { Args: { _session: string }; Returns: string[] }
+      duty_session_published: { Args: { _session: string }; Returns: boolean }
+      duty_visible_assignments: {
+        Args: { _session: string }
+        Returns: string[]
+      }
+      exam_ts: { Args: { _date: string; _time: string }; Returns: string }
       get_user_primary_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["user_role"]
-      }
-      duty_is_chair: { Args: Record<PropertyKey, never>; Returns: boolean }
-      duty_my_college_rows: { Args: { _session: string }; Returns: string[] }
-      duty_session_published: { Args: { _session: string }; Returns: boolean }
-      duty_visible_assignments: { Args: { _session: string }; Returns: string[] }
-      server_now: {
-        Args: Record<PropertyKey, never>
-        Returns: string
       }
       get_user_role: {
         Args: { user_uuid: string }
         Returns: Database["public"]["Enums"]["user_role"]
       }
+      paper_retention: { Args: never; Returns: string }
+      refresh_paper_expiry: { Args: { _paper_id: string }; Returns: undefined }
+      server_now: { Args: never; Returns: string }
     }
     Enums: {
       app_role: "chairperson" | "college_admin"
@@ -756,6 +913,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       app_role: ["chairperson", "college_admin"],

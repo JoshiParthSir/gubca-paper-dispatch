@@ -236,24 +236,27 @@ CREATE POLICY "College admin reads active duties in scope" ON public.duty_assign
 
 CREATE POLICY "College admin reads faculty in scope" ON public.duty_faculty
   FOR SELECT USING (
-    public.duty_session_published(session_id)
+    public.duty_session_published(duty_faculty.session_id)
     AND (
-      college_data_id IN (SELECT public.duty_my_college_rows(session_id))
-      OR id IN (SELECT a.faculty_id FROM public.duty_assignments a
-                WHERE a.id IN (SELECT public.duty_visible_assignments(session_id)))
+      duty_faculty.college_data_id IN (SELECT public.duty_my_college_rows(duty_faculty.session_id))
+      OR duty_faculty.id IN (
+        SELECT a.faculty_id FROM public.duty_assignments a
+        WHERE a.id IN (SELECT public.duty_visible_assignments(duty_faculty.session_id)))
     )
   );
 
 CREATE POLICY "College admin reads colleges in scope" ON public.duty_college_data
   FOR SELECT USING (
-    public.duty_session_published(session_id)
+    public.duty_session_published(duty_college_data.session_id)
     AND (
-      id IN (SELECT public.duty_my_college_rows(session_id))
-      OR id IN (SELECT a.centre_id FROM public.duty_assignments a
-                WHERE a.id IN (SELECT public.duty_visible_assignments(session_id)))
-      OR id IN (SELECT f.college_data_id FROM public.duty_faculty f
-                JOIN public.duty_assignments a ON a.faculty_id = f.id
-                WHERE a.id IN (SELECT public.duty_visible_assignments(session_id)))
+      duty_college_data.id IN (SELECT public.duty_my_college_rows(duty_college_data.session_id))
+      OR duty_college_data.id IN (
+        SELECT a.centre_id FROM public.duty_assignments a
+        WHERE a.id IN (SELECT public.duty_visible_assignments(duty_college_data.session_id)))
+      OR duty_college_data.id IN (
+        SELECT f.college_data_id FROM public.duty_faculty f
+        JOIN public.duty_assignments a ON a.faculty_id = f.id
+        WHERE a.id IN (SELECT public.duty_visible_assignments(duty_college_data.session_id)))
     )
   );
 
@@ -267,6 +270,7 @@ CREATE POLICY "College admin reads own faculty's finalised letters" ON public.du
   FOR SELECT USING (
     finalised_at IS NOT NULL
     AND public.duty_session_published(session_id)
-    AND faculty_id IN (SELECT f.id FROM public.duty_faculty f
-                       WHERE f.college_data_id IN (SELECT public.duty_my_college_rows(session_id)))
+    AND duty_letters.faculty_id IN (
+      SELECT f.id FROM public.duty_faculty f
+      WHERE f.college_data_id IN (SELECT public.duty_my_college_rows(duty_letters.session_id)))
   );

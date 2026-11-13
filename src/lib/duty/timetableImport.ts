@@ -1,7 +1,8 @@
 // Reads the practical timetable: one row per batch with
 // Date, Centre, Subject Code, Batch, Seat From, Seat To (and optionally Students).
 
-import { cleanCollegeCode, collegeKey } from './names';
+import { isCodePrefix } from './collegeLink';
+import { cleanCollegeCode, collegeKey, editDistance } from './names';
 import { normalizeSubjectCode, toInt, type ImportWarning } from './formImport';
 
 export interface TimetableRow {
@@ -132,56 +133,57 @@ export function parseTimetable(rows: unknown[][]): ParsedTimetable {
   return { rows: out, subjectCodes, warnings };
 }
 
-/** Optimal string alignment distance (edit distance that counts swaps as 1). */
-export function editDistance(a: string, b: string): number {
-  const d = Array.from({ length: a.length + 1 }, (_, i) => [i, ...Array(b.length).fill(0)]);
-  for (let j = 1; j <= b.length; j++) d[0][j] = j;
-  for (let i = 1; i <= a.length; i++) {
-    for (let j = 1; j <= b.length; j++) {
-      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-      d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + cost);
-      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) {
-        d[i][j] = Math.min(d[i][j], d[i - 2][j - 2] + 1);
-      }
-    }
-  }
-  return d[a.length][b.length];
-}
+export { editDistance };
 
 export interface CentreMatch {
   centreCode: string;
   /** Key of the matched college in the form data, or null. */
   collegeKey: string | null;
-  /** exact: same code; check: close spelling, the chairperson should confirm; none: no match. */
-  confidence: 'exact' | 'check' | 'none';
+  /**
+   * exact: same code; alias: a known other code of the same college
+   * (CCCA = AAKMS, KHYATI = KHYATIBCA), linked without asking;
+   * check: a guess the chairperson should confirm; none: no match.
+   */
+  confidence: 'exact' | 'alias' | 'check' | 'none';
 }
 
 /**
  * Link each timetable centre to a college from the form responses.
- * Anything short of an exact code match is only a suggestion ('check')
- * that the chairperson must confirm. Suggestions come from, in order:
- *   1. the centre code appearing in the college's email
- *      (e.g. centre CCCA, email ccca.bca2009@…)
- *   2. one code being the start of the other (KHYATI / KHYATIBCA)
- *   3. a close spelling, only for codes of 6+ letters, since short codes
- *      like CCCA and LCCA are different colleges one letter apart.
+ * Tried in order:
+ *   1. the same code                                  -> exact
+ *   2. another code of the same college, from its account
+ *      college ("AAKMS (CCCA)") or `aliases`            -> alias
+ *   3. one code being the start of the other
+ *      (KHYATI / KHYATIBCA)                             -> alias
+ *   4. the centre code appearing in the college's email
+ *      (e.g. centre CCCA, email ccca.bca2009@…)         -> check
+ *   5. a close spelling, only for codes of 6+ letters, since short codes
+ *      like CCCA and LCCA are different colleges one letter apart -> check
  */
 export function matchCentres(
   centreCodes: string[],
-  colleges: readonly { key: string; email?: string | null }[],
+  colleges: readonly { key: string; email?: string | null; aliases?: readonly string[] }[],
 ): CentreMatch[] {
   const keys = colleges.map((c) => c.key);
-  const only = (found: string[]) => (found.length === 1 ? found[0] : null);
+  const only = (found: string[]) => {
+    const u = [...new Set(found)];
+    return u.length === 1 ? u[0] : null;
+  };
 
   return [...new Set(centreCodes)].map((centreCode): CentreMatch => {
     const k = collegeKey(centreCode);
     if (keys.includes(k)) return { centreCode, collegeKey: k, confidence: 'exact' };
 
+    const byAlias = only(colleges.filter((c) => c.aliases?.includes(k)).map((c) => c.key));
+    if (byAlias) return { centreCode, collegeKey: byAlias, confidence: 'alias' };
+
+    const byPrefix = only(
+      colleges.filter((c) => [c.key, ...(c.aliases ?? [])].some((a) => isCodePrefix(a, k))).map((c) => c.key),
+    );
+    if (byPrefix) return { centreCode, collegeKey: byPrefix, confidence: 'alias' };
+
     const byEmail = only(colleges.filter((c) => k.length >= 3 && collegeKey(c.email ?? '').includes(k)).map((c) => c.key));
     if (byEmail) return { centreCode, collegeKey: byEmail, confidence: 'check' };
-
-    const byPrefix = only(keys.filter((ck) => Math.min(ck.length, k.length) >= 4 && (ck.startsWith(k) || k.startsWith(ck))));
-    if (byPrefix) return { centreCode, collegeKey: byPrefix, confidence: 'check' };
 
     if (k.length >= 6) {
       const limit = k.length >= 10 ? 2 : 1;

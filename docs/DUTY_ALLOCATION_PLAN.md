@@ -5,7 +5,7 @@ Branch: `feature/duty-allocation`.
 
 ## The 9 rules (from the chairperson)
 
-1. Upload the Google Form responses directly. Practical subjects come from the timetable. Faculty of that subject are preferred, **all other faculty stay as backup**.
+1. Upload the Google Form responses directly. Practical subjects come from the timetable. Only faculty of that subject are allocated automatically; **all other faculty are kept, and the chairperson can pick them by hand** when no teacher of the subject is free.
 2. **Seniors first.** No junior gets a duty until every senior has one.
 3. The letter is fully customisable. It is **never regenerated** automatically; it is fixed once the chairperson finalises it.
 4. If a duty is cancelled and given to someone else, that shows **only in Cancellations**, not in the allocation or edit views.
@@ -21,11 +21,31 @@ Branch: `feature/duty-allocation`.
 
 | Phase | What | State |
 |---|---|---|
-| 1 | Tables + RLS, form/timetable import, name cleaning | Done (not yet applied to Supabase) |
-| 2 | Allocation engine + chairperson page (Import, Faculty, Rules, Allocate) | Done (not yet tried in the browser) |
-| 3 | Letters: settings, generate once, edit, finalise, PDF / ZIP, duty table export | To do |
-| 4 | Edit + Cancellations, Publish, College Admin "My Duties" | To do |
-| 5 | End-to-end check with real files | To do |
+| 1 | Tables + RLS, form/timetable import, name cleaning | Done, applied to Supabase (2026-11-13) |
+| 2 | Allocation engine + chairperson page (Import, Faculty, Rules, Allocate) | Done; pipeline checked on the real files in Node, browser click-through still to do |
+| 3 | Letters: settings, generate once, edit, finalise, PDF / ZIP, duty table export | Done (code + tests); browser check pending |
+| 4 | Edit + Cancellations, Publish, College Admin "My Duties" | Done; RLS + cancel function checked on the live DB in rolled-back transactions |
+| 5 | End-to-end check with real files | Steps below; needs a browser session |
+
+### Step 0 results (2026-11-13)
+
+- `db push` first failed: `column reference "session_id" is ambiguous` in the
+  "College admin reads colleges in scope" policy (the subquery joins two
+  tables that both have `session_id`). Fixed by qualifying the outer column
+  (`duty_college_data.session_id` etc.) in the three college-admin policies,
+  then pushed. Types regenerated; `tsc` passes.
+- Real files through the same code the page runs (Node, in-memory DB):
+  15 colleges, 68 faculty, 60 batches -> 20 slots on 2 dates; the 4 "Check"
+  centres are exactly CCCA->AAKMS, KHYATI->KHYATIBCA, UMIYABCA->UCCA,
+  PRSTDBCA->PRSDTBCA; 48/48 seats filled, every senior has a duty, no
+  double-day and no own-college duty.
+- Gap found and fixed: nothing ever set `duty_college_data.college_id`, so a
+  college admin would have seen nothing after publishing. Import now links
+  colleges to their account by code (also the bracketed old code, e.g.
+  "KDPICA (UCCA)" answers to UCCA), and Import has a third card
+  "Colleges and accounts" to fix links and the full names used in letters.
+  With the current accounts 14 of 15 link; "S P Mahilla College" has no account.
+- Rules form and letter settings no longer lose unsaved edits on re-render.
 
 ### Already in the repo
 
@@ -35,7 +55,7 @@ src/integrations/supabase/types.ts                        duty_* types (hand-wri
 src/lib/duty/names.ts            name + college code cleaning
 src/lib/duty/formImport.ts       Google Form responses -> subjects, colleges, faculty
 src/lib/duty/timetableImport.ts  timetable rows, date parsing, centre matching
-src/lib/duty/pools.ts            subject / other practical / backup tiers
+src/lib/duty/pools.ts            subject / other practical / not-teaching tiers
 src/lib/duty/allocate.ts         allocation engine, buildSlots, checkDuty
 src/lib/duty/readSheet.ts        xlsx/csv reading (SheetJS, lazy-loaded), template download
 src/lib/duty/store.ts            all Supabase reads/writes for the feature
@@ -114,7 +134,7 @@ Auto-fill (rule 6):
 - **Subject names**: `duty_subjects.name` (from the form headers, e.g. "Practical Solutions Using Python"). Only codes present in `duty_timetable` go in the letter.
 - **Semester**: from the subject code number, `353 -> 5` (`Math.floor(n / 10) % 10`). Confirm this matches GU codes for other semesters; it is only a default and stays editable.
 - **Exam month**: month + year of the earliest timetable date, e.g. "November - 2026".
-- **College full names**: start from `colleges.name` when `duty_college_data.college_id` is linked, else the form's `raw_name`. Editable in the settings screen.
+- **College full names**: stored in `duty_college_data.full_name` (not in `letter_settings`): filled from `colleges.name` when the college is linked, else the form's `raw_name`. Edited in Import → "Colleges and accounts".
 - **Chairperson**: default from the signed-in chairperson's `profiles.full_name`; the rest is typed once and saved per session (copy from the previous session when creating a new one).
 
 Placeholders (keep the list small and documented in the UI):
@@ -187,7 +207,7 @@ Tests: `letter.test.ts` for `buildLetter` (placeholders filled, only active duti
 ### 4.1 Edit (before publishing)
 
 In the Allocate tab, each examiner line gets **Change**:
-- The picker lists eligible faculty for that seat, ranked like the engine (teaches it → other practical → backup, then fewest duties). Use `checkDuty()` from `allocate.ts` to show why someone is not allowed. The chairperson may override (e.g. own college) only after a confirm.
+- The picker lists eligible faculty for that seat, ranked like the engine (teaches it → other practical → not teaching, then fewest duties; picking someone who does not teach it asks for a confirm). Use `checkDuty()` from `allocate.ts` to show why someone is not allowed. The chairperson may override (e.g. own college) only after a confirm.
 - Before publishing, a change simply updates `faculty_id` on the active row. No history needed.
 
 ### 4.2 Cancellations (rule 4)
@@ -245,15 +265,55 @@ Letters after a cancellation:
 
 ---
 
+### 4.5 results on the live database (2026-11-13)
+
+Run as SQL inside a single `DO` block that always ends in `RAISE EXCEPTION`,
+so nothing was kept (checked afterwards: 0 duty sessions). Chairperson and an
+LJCCA college admin were impersonated via `request.jwt.claims` + `SET ROLE authenticated`.
+
+- [x] Draft session: admin sees 0 sessions, 0 duties, 0 letters.
+- [x] Published: own faculty's duty + duty at own centre (2), not a third college's duty.
+- [x] Cancelled rows hidden.
+- [x] Only own faculty's finalised letter visible (draft letter and other college's letter hidden).
+- [x] Admin insert refused; admin update / delete affect 0 rows.
+- [x] Finalised letter content cannot be changed (trigger).
+- [x] Second active duty on the same day refused (unique index).
+- [x] `duty_cancel_and_replace`: reason required; a clash rolls the whole call back; cancel-only works; double cancel refused; college admin refused.
+- [ ] Repeat in the browser with two real accounts (Phase 5, step 5).
+
 ## Phase 5 – end-to-end check
 
-With `NEP_GUBCA_sem5_Data_september26 (Responses).xlsx` and `BCA_Sem5_Practical_Timetable_Nov2026.xlsx`:
-1. Import both; the 4 centre links are confirmed.
-2. Mark real seniors; run; every senior has a duty before any junior; no unfilled seats.
-3. Generate letters → edit one → finalise all → download ZIP and the single PDF; check subject names, semester, exam month, chairperson and coordinator details.
-4. Cancel one duty with a replacement: the Allocate view shows only the new examiner; Cancellations shows the history; the new letter has no change wording.
-5. Publish; sign in as a college admin; check 4.5.
-6. `npm test`, `npx tsc -p tsconfig.app.json --noEmit`, `npm run lint`, `npm run build` all pass.
+With `NEP_GUBCA_sem5_Data_september26 (Responses).xlsx` and `BCA_Sem5_Practical_Timetable_Nov2026.xlsx`
+(`npm run dev`, sign in as chairperson, Examinations → Duty Allocation):
+
+1. **New exam** "BCA Sem 5 Nov 2026".
+2. **1. Import**: upload the form file → expect 15 colleges, 68 faculty, 4 warnings
+   (LJCCA "PUNAM MA'AM", NAVGUJBCA "Visiting" ×2, KIBCA "NA") → Save.
+   Upload the timetable → 60 batches; 4 centres marked "Check" (CCCA→AAKMS,
+   KHYATI→KHYATIBCA, UMIYABCA→UCCA, PRSTDBCA→PRSDTBCA); tick the box → Save.
+   Card 3 "Colleges and accounts": 14 linked, S P Mahilla College not linked; check full names.
+3. **2. Faculty**: mark the real seniors.
+4. **4. Allocate**: Run → 48/48 seats, "Seniors with a duty" n/n, no red alerts → Save.
+   Use the pencil on one duty → the picker shows reasons ("Own college", "Already has a duty that day").
+5. **5. Letters**: open Letter settings → semester "Semester V" and "November - 2026" are pre-filled →
+   fill chairperson, coordinator (phone, email), rate, bill last date → Save.
+   Generate letters (one per examiner). Preview one (HTML), "Open PDF in new tab", Download PDF.
+   Edit one letter (change a guideline) → Save. Type "revised" in a field → red warning appears.
+   Finalise all drafts. Download all (ZIP): one file per examiner, `<COLLEGE>_<Name>.pdf`, no overwrites.
+   All letters in one PDF; Duty table PDF and Excel.
+6. **Cancel**: Allocate → pencil on a duty → "Cancel duty", reason, pick a replacement →
+   Allocate shows only the new examiner; **6. Cancellations** shows the history;
+   Letters: "Generate letters (1)" for the new examiner (no change wording in it), and the old
+   examiner's letter shows "Check duties" → un-finalise, delete the row (or the letter), finalise again.
+7. **Publish** (enabled only when every examiner has a finalised letter).
+8. Sign in as an LJCCA college admin → Examinations → **My Duties**: own faculty's duties with PDF / ZIP,
+   examiners coming to LJCCA; nothing from other colleges. Unpublish → My Duties is empty.
+9. `npm test` (42), `npx tsc -p tsconfig.app.json --noEmit`, `npm run build` pass. `npm run lint`: duty files are
+   clean; 28 older errors remain in `src/components/ui/*`, `useAuth.tsx` and the stray files (housekeeping PR).
+
+Files: `src/lib/duty/{letterSettings,letter,dutyTable,pdf,collegeLink}.ts`,
+`src/components/duty/{LettersTab,LetterSettingsCard,LetterEditor,LetterPreview,DutyChangeDialog,CancellationsTab,CollegeLinksCard}.tsx`,
+`src/pages/MyDuties.tsx`, `supabase/migrations/20261113150000_duty_cancel_and_replace.sql`.
 
 ## Known data issues in the current form file
 

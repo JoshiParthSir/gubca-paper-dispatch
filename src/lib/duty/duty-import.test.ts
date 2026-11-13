@@ -44,6 +44,42 @@ describe('parseNameCell', () => {
   });
 });
 
+describe('two people in one cell', () => {
+  it('splits on a repeated title, numbering, + and |', () => {
+    expect(names('Prof. Asha Mehta Prof. Ravi Desai')).toEqual(['Prof. Asha Mehta', 'Prof. Ravi Desai']);
+    expect(names('Dr. Kiran Shah Prof. Ravi Desai')).toEqual(['Dr. Kiran Shah', 'Prof. Ravi Desai']);
+    expect(names('1. Asha Mehta 2. Ravi Desai')).toEqual(['Prof. Asha Mehta', 'Prof. Ravi Desai']);
+    expect(names('1) Asha Mehta\n2) Ravi Desai')).toEqual(['Prof. Asha Mehta', 'Prof. Ravi Desai']);
+    expect(names('Asha Mehta + Ravi Desai | Kiran Shah')).toEqual(['Prof. Asha Mehta', 'Prof. Ravi Desai', 'Prof. Kiran Shah']);
+  });
+
+  it('does not split stacked titles', () => {
+    expect(names('Prof. Dr. Kiran Shah')).toEqual(['Dr. Kiran Shah']);
+  });
+});
+
+describe('same person in two subjects', () => {
+  const H = (code: string) => `Names of Faculty(ies) handling the subject of ${code} : X`;
+  const parse = (a: string, b: string) => parseFormResponses([
+    ['Timestamp', 'Name of your College', 'Number of computers', H('DSC-C-BCA-353P'), H('DSC-M-BCA-355P')],
+    ['2026-11-01', 'LJCCA', 80, a, b],
+  ]);
+
+  it('merges names written another way into one person with both subjects', () => {
+    const f = parse('Asha R. Mehta, Ravi Desai', 'MEHTA ASHA').colleges[0].faculty;
+    expect(f.map((x) => [x.name, x.subjectCodes])).toEqual([
+      ['Asha R. Mehta', ['DSC-C-BCA-353P', 'DSC-M-BCA-355P']],
+      ['Ravi Desai', ['DSC-C-BCA-353P']],
+    ]);
+  });
+
+  it('flags close spellings without merging them', () => {
+    const r = parse('Asha Mehta', 'Asha Metha');
+    expect(r.colleges[0].faculty).toHaveLength(2);
+    expect(r.warnings.some((w) => /look like the same person/.test(w.message))).toBe(true);
+  });
+});
+
 describe('cleanCollegeCode', () => {
   it('drops the place in brackets', () => {
     expect(cleanCollegeCode('NGCCA (Ashram Road)')).toBe('NGCCA');
@@ -155,10 +191,23 @@ describe('timetable', () => {
       { centreCode: 'PRSTDBCA', collegeKey: 'PRSDTBCA', confidence: 'check' },
       // Short codes one letter apart (CCCA / LCCA) are never guessed; the email links it.
       { centreCode: 'CCCA', collegeKey: 'AAKMS', confidence: 'check' },
-      { centreCode: 'KHYATI', collegeKey: 'KHYATIBCA', confidence: 'check' },
+      { centreCode: 'KHYATI', collegeKey: 'KHYATIBCA', confidence: 'alias' },
       { centreCode: 'UMIYABCA', collegeKey: 'UCCA', confidence: 'check' },
       { centreCode: 'XYZ', collegeKey: null, confidence: 'none' },
       { centreCode: 'NGCCA', collegeKey: null, confidence: 'none' },
+    ]);
+  });
+
+  it('links known other codes of the same college without asking', () => {
+    const colleges = [
+      { key: 'AAKMS', email: null, aliases: ['AAKMS', 'CCCA'] },
+      { key: 'LCCA', email: null, aliases: ['LCCA'] },
+      { key: 'KHYATIBCA', email: null, aliases: ['KHYATIBCA'] },
+    ];
+    expect(matchCentres(['CCCA', 'LCCA', 'KHYATI'], colleges)).toEqual([
+      { centreCode: 'CCCA', collegeKey: 'AAKMS', confidence: 'alias' },
+      { centreCode: 'LCCA', collegeKey: 'LCCA', confidence: 'exact' },
+      { centreCode: 'KHYATI', collegeKey: 'KHYATIBCA', confidence: 'alias' },
     ]);
   });
 });
@@ -168,10 +217,10 @@ describe('pools', () => {
   it('prefers subject teachers but keeps everyone', () => {
     expect(facultyTier(['DSC-C-BCA-353P'], 'DSC-C-BCA-353P', practicals)).toBe('subject');
     expect(facultyTier(['DSC-M-BCA-355P'], 'DSC-C-BCA-353P', practicals)).toBe('practical');
-    expect(facultyTier(['DSC-C-BCA-351T'], 'DSC-C-BCA-353P', practicals)).toBe('backup');
+    expect(facultyTier(['DSC-C-BCA-351T'], 'DSC-C-BCA-353P', practicals)).toBe('other');
     expect(summarisePools([{ subjectCodes: ['DSC-C-BCA-353P'] }, { subjectCodes: [] }], practicals)).toEqual([
-      { subjectCode: 'DSC-C-BCA-353P', subject: 1, practical: 0, backup: 1 },
-      { subjectCode: 'DSC-M-BCA-355P', subject: 0, practical: 1, backup: 1 },
+      { subjectCode: 'DSC-C-BCA-353P', subject: 1, practical: 0, other: 1 },
+      { subjectCode: 'DSC-M-BCA-355P', subject: 0, practical: 1, other: 1 },
     ]);
   });
 });

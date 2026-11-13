@@ -87,7 +87,7 @@ export function RulesTab({ sessionId, data, rules, onSaved, onError }: TabProps 
           <Label>Blocked: faculty who must not go to a centre</Label>
           <div className="flex flex-wrap gap-2">
             <Select value={blockFaculty} onValueChange={setBlockFaculty}>
-              <SelectTrigger className="w-[260px]"><SelectValue placeholder="Faculty" /></SelectTrigger>
+              <SelectTrigger className="w-full sm:w-[260px]"><SelectValue placeholder="Faculty" /></SelectTrigger>
               <SelectContent>
                 {[...data.faculty]
                   .sort((a, b) => a.name.localeCompare(b.name))
@@ -97,7 +97,7 @@ export function RulesTab({ sessionId, data, rules, onSaved, onError }: TabProps 
               </SelectContent>
             </Select>
             <Select value={blockCentre} onValueChange={setBlockCentre}>
-              <SelectTrigger className="w-[180px]"><SelectValue placeholder="Centre" /></SelectTrigger>
+              <SelectTrigger className="w-full sm:w-[180px]"><SelectValue placeholder="Centre" /></SelectTrigger>
               <SelectContent>
                 {centres.map((c) => <SelectItem key={c.id} value={c.id}>{c.code}</SelectItem>)}
               </SelectContent>

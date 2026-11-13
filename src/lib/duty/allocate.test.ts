@@ -77,20 +77,34 @@ describe('allocate', () => {
     expect(r.stats.filled + r.unfilled.length).toBe(r.stats.seats);
   });
 
-  it('prefers faculty who teach the practical, keeps others as backup', () => {
+  it('allocates only faculty who teach the practical', () => {
     const centres = [{ id: 'A', pcs: 60 }];
     const teacher = fac('B', false, [PY]);
-    const backup = fac('B', false, ['DSC-C-BCA-351T']);
+    const other = fac('B', false, ['DSC-C-BCA-351T']);
     const senior = fac('C', true, [PY]);
-    const r = allocate(input({ slots: [slot('d1', 'A')], centres, faculty: [backup, teacher, senior] }));
+    const r = allocate(input({ slots: [slot('d1', 'A')], centres, faculty: [other, teacher, senior] }));
     expect(r.duties.map((d) => [d.facultyId, d.tier])).toEqual([
       [senior.id, 'subject'],
       [teacher.id, 'subject'],
     ]);
 
-    // With no subject teacher left, backup faculty still fill the seat.
-    const r2 = allocate(input({ slots: [slot('d1', 'A')], centres, faculty: [backup, senior] }));
-    expect(r2.duties.find((d) => d.seatRole === 'junior')).toMatchObject({ facultyId: backup.id, tier: 'backup' });
+    // With no subject teacher left, the seat stays empty for the
+    // chairperson to fill by hand; nobody who does not teach it is used.
+    const r2 = allocate(input({ slots: [slot('d1', 'A')], centres, faculty: [other, senior] }));
+    expect(r2.duties.map((d) => d.facultyId)).toEqual([senior.id]);
+    expect(r2.unfilled).toEqual([{ date: 'd1', centreId: 'A', subjectCode: PY, seatRole: 'junior' }]);
+  });
+
+  it('never gives one person two duties on a day, even when two colleges list them', () => {
+    const centres = [{ id: 'A', pcs: 60 }, { id: 'B', pcs: 60 }, { id: 'C', pcs: 60 }];
+    // Same person, listed by college B and college C.
+    const atB = fac('B', true, [PY], { personKey: 'asha mehta' });
+    const atC = fac('C', true, [PY], { personKey: 'asha mehta' });
+    const r = allocate(input({ slots: [slot('d1', 'A'), slot('d1', 'B')], centres, faculty: [atB, atC] }));
+    // One duty that day, and never at B or C (both are her colleges).
+    expect(r.duties).toHaveLength(1);
+    expect(r.duties[0].centreId).toBe('A');
+    expect(r.stats.examiners).toBe(1);
   });
 
   it('spreads duties up to the preferred count before going higher', () => {

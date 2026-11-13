@@ -6,20 +6,23 @@
 //   2. Junior seats   <- seniors who still have no duty.
 //   3. Junior seats   <- juniors, those with no duty first.
 //   4. Any empty seat <- anyone eligible, up to the maximum duties.
-// Within each step candidates are ranked by: whether they teach this
-// practical, another practical, or neither (backup); then fewest duties so
-// far; then a seeded tie-break so a re-run gives the same result. Each
+// Only faculty who teach the practical are used; a seat with no free
+// teacher of that subject stays empty for the chairperson to fill by hand.
+// Within each step candidates are ranked by fewest duties so far, then a
+// seeded tie-break so a re-run gives the same result. Each
 // step first allows one duty, then up to the preferred count, and only
 // then up to the maximum, so the load stays spread.
 //
 // Hard rules (never broken by the automatic run):
-//   - one duty per examiner per day
+//   - only faculty who teach this practical
+//   - one duty per examiner per day (the same person listed by two
+//     colleges counts as one examiner)
 //   - never above the maximum duties
 //   - not at their own college (when the rule is on)
 //   - not at a centre the chairperson blocked for them
 //   - not if marked unavailable, or visiting while visiting is excluded
 
-import { facultyTier, TIER_ORDER, type PoolTier } from './pools';
+import { facultyTier, type PoolTier } from './pools';
 
 export interface AllocationRules {
   /** Centres with at least this many PCs get the "large" seat counts. */
@@ -51,6 +54,12 @@ export const DEFAULT_RULES: AllocationRules = {
 
 export interface AllocFaculty {
   id: string;
+  /**
+   * The same person can be listed by two colleges (e.g. visiting faculty).
+   * Records with the same key are one person: one duty a day, one duty
+   * count, and none of their colleges. Defaults to the id.
+   */
+  personKey?: string;
   /** duty_college_data id of their college. */
   collegeId: string;
   isSenior: boolean;
@@ -121,7 +130,7 @@ export interface AllocationInput {
   centres: readonly AllocCentre[];
   faculty: readonly AllocFaculty[];
   rules: AllocationRules;
-  /** Practical subject codes in this timetable (for the backup tiers). */
+  /** Practical subject codes in this timetable (for the tiers). */
   practicalCodes: readonly string[];
   /** facultyId -> centre ids they must not be sent to. */
   blocked?: ReadonlyMap<string, ReadonlySet<string>>;
@@ -165,8 +174,10 @@ export function allocate(input: AllocationInput): AllocationResult {
   const pcsOf = new Map(input.centres.map((c) => [c.id, c.pcs]));
   const facultyById = new Map(input.faculty.map((f) => [f.id, f]));
 
-  const count = new Map<string, number>();
-  const busy = new Map<string, Set<string>>(); // facultyId -> dates
+  const people = personIndex(input.faculty);
+  const person = people.person;
+  const count = new Map<string, number>(); // person -> duties
+  const busy = new Map<string, Set<string>>(); // person -> dates
   const duties: Duty[] = [];
 
   const usable = (f: AllocFaculty) => f.isAvailable && (rules.includeVisiting || !f.isVisiting);
@@ -181,9 +192,10 @@ export function allocate(input: AllocationInput): AllocationResult {
 
   const take = (seat: Seat, f: AllocFaculty, fixed: boolean) => {
     seat.facultyId = f.id;
-    count.set(f.id, (count.get(f.id) ?? 0) + 1);
-    if (!busy.has(f.id)) busy.set(f.id, new Set());
-    busy.get(f.id)!.add(seat.slot.date);
+    const p = person(f.id);
+    count.set(p, (count.get(p) ?? 0) + 1);
+    if (!busy.has(p)) busy.set(p, new Set());
+    busy.get(p)!.add(seat.slot.date);
     duties.push({
       date: seat.slot.date,
       centreId: seat.slot.centreId,
@@ -211,19 +223,20 @@ export function allocate(input: AllocationInput): AllocationResult {
     take(seat, f, true);
   }
 
+  const teaches = (f: AllocFaculty, seat: Seat) => f.subjectCodes.includes(seat.slot.subjectCode);
+
   const canSit = (f: AllocFaculty, seat: Seat, limit: number) =>
     usable(f)
-    && (count.get(f.id) ?? 0) < limit
-    && !busy.get(f.id)?.has(seat.slot.date)
-    && !(rules.avoidOwnCollege && f.collegeId === seat.slot.centreId)
+    && teaches(f, seat)
+    && (count.get(person(f.id)) ?? 0) < limit
+    && !busy.get(person(f.id))?.has(seat.slot.date)
+    && !(rules.avoidOwnCollege && people.colleges(f.id).has(seat.slot.centreId))
     && !blocked.get(f.id)?.has(seat.slot.centreId);
 
-  // Subject fit comes first: backup faculty are used only when nobody who
-  // teaches the practical can sit (date clash, own college, duty limit).
-  // The duty limits passed to fill() keep the load spread.
-  const rank = (f: AllocFaculty, seat: Seat) => [
-    TIER_ORDER[facultyTier(f.subjectCodes, seat.slot.subjectCode, practicalCodes)],
-    count.get(f.id) ?? 0,
+  // Everyone who can sit teaches the practical; the duty limits passed to
+  // fill() keep the load spread.
+  const rank = (f: AllocFaculty) => [
+    count.get(person(f.id)) ?? 0,
     jitter.get(f.id)!,
   ];
   const better = (a: number[], b: number[]) => {
@@ -241,7 +254,7 @@ export function allocate(input: AllocationInput): AllocationResult {
       let bestOptions: AllocFaculty[] = [];
       for (const seat of seats) {
         if (seat.facultyId || (role !== 'any' && seat.role !== role)) continue;
-        const options = pool.filter((f) => (!onlyNew || !count.get(f.id)) && canSit(f, seat, limit));
+        const options = pool.filter((f) => (!onlyNew || !count.get(person(f.id))) && canSit(f, seat, limit));
         if (!options.length) continue;
         if (!bestSeat || options.length < bestOptions.length) {
           bestSeat = seat;
@@ -250,9 +263,9 @@ export function allocate(input: AllocationInput): AllocationResult {
       }
       if (!bestSeat) return;
       let pick = bestOptions[0];
-      let pickRank = rank(pick, bestSeat);
+      let pickRank = rank(pick);
       for (const f of bestOptions.slice(1)) {
-        const r = rank(f, bestSeat);
+        const r = rank(f);
         if (better(r, pickRank)) {
           pick = f;
           pickRank = r;
@@ -270,8 +283,7 @@ export function allocate(input: AllocationInput): AllocationResult {
   // 2. Seniors still without a duty take junior seats before any junior.
   fill('junior', seniors, 1, true);
   fill('senior', seniors, rules.preferredDuties);
-  // 3. Juniors up to the preferred count. Subject teachers come first, so
-  //    backup juniors are used only where no subject teacher can sit.
+  // 3. Juniors up to the preferred count.
   fill('junior', juniors, 1);
   fill('junior', juniors, rules.preferredDuties);
   // 4. Whatever is still empty, up to the maximum.
@@ -289,17 +301,18 @@ export function allocate(input: AllocationInput): AllocationResult {
     || a.subjectCode.localeCompare(b.subjectCode)
     || (a.seatRole === b.seatRole ? 0 : a.seatRole === 'senior' ? -1 : 1));
 
-  const examiners = new Set(duties.map((d) => d.facultyId));
+  const examiners = new Set(duties.map((d) => person(d.facultyId)));
+  const seniorPeople = [...new Map(seniors.map((f) => [person(f.id), f])).values()];
   return {
     duties,
     unfilled,
-    seniorsWithoutDuty: seniors.filter((f) => !examiners.has(f.id)).map((f) => f.id),
+    seniorsWithoutDuty: seniorPeople.filter((f) => !examiners.has(person(f.id))).map((f) => f.id),
     stats: {
       seats: seats.length,
       filled: duties.length,
       examiners: examiners.size,
-      seniorsUsed: seniors.filter((f) => examiners.has(f.id)).length,
-      seniorsTotal: seniors.length,
+      seniorsUsed: seniorPeople.filter((f) => examiners.has(person(f.id))).length,
+      seniorsTotal: seniorPeople.length,
       abovePreferred: [...count.values()].filter((c) => c > rules.preferredDuties).length,
     },
   };
@@ -320,19 +333,44 @@ export function buildSlots(
   return [...map.values()].sort((a, b) => slotKey(a).localeCompare(slotKey(b)));
 }
 
-/** Rules the automatic run never breaks; used to check hand edits too. */
+/** Groups faculty records that are the same person (see AllocFaculty.personKey). */
+export function personIndex(faculty: readonly AllocFaculty[]) {
+  const personOf = new Map(faculty.map((f) => [f.id, f.personKey || f.id]));
+  const collegesOf = new Map<string, Set<string>>();
+  for (const f of faculty) {
+    const p = personOf.get(f.id)!;
+    if (!collegesOf.has(p)) collegesOf.set(p, new Set());
+    collegesOf.get(p)!.add(f.collegeId);
+  }
+  const person = (id: string) => personOf.get(id) ?? id;
+  return {
+    person,
+    /** Every college this record's person belongs to. */
+    colleges: (id: string) => collegesOf.get(person(id)) ?? new Set<string>(),
+  };
+}
+
+/**
+ * Rules the automatic run never breaks; used to check hand edits too.
+ * Pass `people` so another record of the same person counts as well.
+ */
 export function checkDuty(
   d: { date: string; centreId: string; facultyId: string },
   faculty: AllocFaculty,
   others: readonly { date: string; facultyId: string }[],
   rules: AllocationRules,
   blocked?: ReadonlySet<string>,
+  people?: ReturnType<typeof personIndex>,
 ): string[] {
+  const person = people?.person ?? ((id: string) => id);
+  const me = person(d.facultyId);
+  const mine = others.filter((o) => person(o.facultyId) === me);
+  const colleges = people?.colleges(d.facultyId) ?? new Set([faculty.collegeId]);
   const problems: string[] = [];
-  if (others.some((o) => o.facultyId === d.facultyId && o.date === d.date)) problems.push('Already has a duty that day');
-  if (rules.avoidOwnCollege && faculty.collegeId === d.centreId) problems.push('Own college');
+  if (mine.some((o) => o.date === d.date)) problems.push('Already has a duty that day');
+  if (rules.avoidOwnCollege && colleges.has(d.centreId)) problems.push('Own college');
   if (blocked?.has(d.centreId)) problems.push('Blocked for this centre');
   if (!faculty.isAvailable) problems.push('Marked unavailable');
-  if (others.filter((o) => o.facultyId === d.facultyId).length >= rules.maxDuties) problems.push('Above maximum duties');
+  if (mine.length >= rules.maxDuties) problems.push('Above maximum duties');
   return problems;
 }
